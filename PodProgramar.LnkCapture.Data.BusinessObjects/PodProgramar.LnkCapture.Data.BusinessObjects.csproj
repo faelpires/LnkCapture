@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="HtmlAgilityPack" Version="1.8.4" />
+    <PackageReference Include="HttpToSocks5Proxy" Version="1.0.5" />
+    <PackageReference Include="Telegram.Bot" Version="14.6.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PodProgramar.LnkCapture.Data.DAL\PodProgramar.LnkCapture.Data.DAL.csproj" />
+    <ProjectReference Include="..\PodProgramar.LnkCapture.Data.DTO\PodProgramar.LnkCapture.Data.DTO.csproj" />
+    <ProjectReference Include="..\PodProgramar.Utils\PodProgramar.Utils.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Resources\LinkResources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>LinkResources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Resources\LinkResources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>LinkResources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
+</Project>

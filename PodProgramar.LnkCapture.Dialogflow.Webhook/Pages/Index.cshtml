@@ -1,0 +1,66 @@
+﻿@page
+@model PodProgramar.LnkCapture.Telegram.Webhook.Pages.IndexModel
+@{
+    ViewData["Title"] = "Index";
+}
+<html lang="en">
+<head>
+    <title>LinkCapture</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="~/lib/bootstrap/css/bootstrap.min.css" />
+    <script src="~/lib/jquery/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/js/bootstrap.min.js"></script>
+</head>
+<body>
+
+    <div class="container px-2">
+
+        <div class="row mt-3"></div>
+
+        @if (!string.IsNullOrEmpty(Model.Data.ChatTitle))
+        {
+            <h5>Group: @Model.Data.ChatTitle</h5>
+        }
+        <p>Create: @Model.Data.CreateDate</p>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Link</th>
+                        <th>User</th>
+                        <th>Create</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var link in Model.Data.Items)
+                    {
+                        var uri = link.Uri;
+                        if (!uri.StartsWith("http"))
+                        {
+                            uri = $"http://{uri}";
+                        }
+
+                        <tr>
+                            <td>
+                                <a href="@uri" target="_blank">
+                                    @if (string.IsNullOrEmpty(link.Title))
+                                    {
+                                        @(link.Uri.Length > 75 ? link.Uri.Substring(0, 75) + "..." : link.Uri)
+                                    }
+                                    else
+                                    {
+                                        @(link.Title.Length > 75 ? link.Title.Substring(0, 75) + "..." : link.Title)
+                                    }
+                                </a>
+                            </td>
+                            <td>@(link.Username ?? (link.UserId.HasValue ? link.UserId.Value.ToString() : "-"))</td>
+                            <td>@link.CreateDate.ToString("dd/MM/yyyy HH:mm")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>
