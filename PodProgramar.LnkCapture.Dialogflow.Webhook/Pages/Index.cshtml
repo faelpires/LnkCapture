@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="~/lib/bootstrap/css/bootstrap.min.css" />
     <script src="~/lib/jquery/jquery.min.js"></script>
     <script src="~/lib/bootstrap/js/bootstrap.min.js"></script>
+    <script src="~/js/Index.js"></script>
 </head>
 <body>
 
@@ -18,48 +19,68 @@
 
         <div class="row mt-3"></div>
 
-        @if (!string.IsNullOrEmpty(Model.Data.ChatTitle))
-        {
-            <h5>Group: @Model.Data.ChatTitle</h5>
-        }
-        <p>Create: @Model.Data.CreateDate</p>
+        <h5>Group: <span id="chatTitle"> </span></h5>
+
+        <form>
+            @Html.HiddenFor(p => p.ChatIdEncrypted, new { @id = "ChatIdEncrypted" })
+            <div class="row">
+                <div class="col-md-5 col-12">
+                    <label for="search">Search:</label>
+                    <input type="text" id="search" class="form-control" />
+                </div>
+                <div class="col-md-3 col-12">
+                    <label for="search">User:</label>
+                    <input type="text" id="user" class="form-control" />
+                </div>
+                <div class="col-md-2 col-6">
+                    <label for="search">Start Date:</label>
+                    <input type="date" id="startDate" value="@DateTime.Now.AddDays(-30).ToString("yyyy-MM-dd")" class="form-control" />
+                </div>
+                <div class="col-md-2 col-6">
+                    <label for="search">End Date:</label>
+                    <input type="date" id="endDate" value="@DateTime.Now.ToString("yyyy-MM-dd")" class="form-control" />
+                </div>
+            </div>
+
+            <div class="d-flex mt-3 justify-content-between">
+                <div>
+                </div>
+                <div>
+                    <button id="btnFilter" type="button" class="btn">Apply Filters</button>
+                </div>
+            </div>
+        </form>
+
+        <div class="row mt-3"></div>
+
+        <div class="row">
+            <div class="col-md-3 col-6">
+                <p>Total items: <span id="totalItems"> </span></p>
+            </div>
+            <div class="col-md-3 col-6">
+                <p>Total searched: <span id="totalSearchItems"> </span></p>
+            </div>
+        </div>
+
+        <div class="row mt-3"></div>
+
         <div class="table-responsive">
-            <table class="table table-striped">
+            <table id="tblinks" class="table table-striped">
                 <thead class="thead-dark">
                     <tr>
-                        <th>Link</th>
-                        <th>User</th>
-                        <th>Create</th>
+                        <th style="width:100%">Link</th>
+                        <th style="min-width: 155px;">User</th>
+                        <th style="min-width: 155px;">Create</th>
                     </tr>
                 </thead>
-                <tbody>
-                    @foreach (var link in Model.Data.Items)
-                    {
-                        var uri = link.Uri;
-                        if (!uri.StartsWith("http"))
-                        {
-                            uri = $"http://{uri}";
-                        }
-
-                        <tr>
-                            <td>
-                                <a href="@uri" target="_blank">
-                                    @if (string.IsNullOrEmpty(link.Title))
-                                    {
-                                        @(link.Uri.Length > 75 ? link.Uri.Substring(0, 75) + "..." : link.Uri)
-                                    }
-                                    else
-                                    {
-                                        @(link.Title.Length > 75 ? link.Title.Substring(0, 75) + "..." : link.Title)
-                                    }
-                                </a>
-                            </td>
-                            <td>@(link.Username ?? (link.UserId.HasValue ? link.UserId.Value.ToString() : "-"))</td>
-                            <td>@link.CreateDate.ToString("dd/MM/yyyy HH:mm")</td>
-                        </tr>
-                    }
-                </tbody>
+                <tbody></tbody>
             </table>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-6 offset-lg-3 py-5 d-flex">
+                <ul class="pagination mx-auto"></ul>
+            </div>
         </div>
     </div>
 </body>

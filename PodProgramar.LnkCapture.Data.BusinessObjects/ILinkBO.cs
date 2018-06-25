@@ -1,5 +1,5 @@
 ﻿using PodProgramar.LnkCapture.Data.DTO;
-using System.Collections.Generic;
+using System;
 using System.Threading.Tasks;
 using Telegram.Bot.Types;
 
@@ -9,11 +9,8 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects
     {
         Task SaveLinkAsync(Update update);
 
-        Task UpdateTitlesAsync();
-
-
         Task SendLinksRecoverMessageAsync(Update update, string chatId);
 
-        Task<LinkResultDTO> GetChatLinksAsync(long id);
+        Task<LinkResultDTO> GetChatLinksAsync(long id, string search, string user, DateTime? startDate, DateTime? endDate, int? pageIndex, int? pageSize);
     }
 }

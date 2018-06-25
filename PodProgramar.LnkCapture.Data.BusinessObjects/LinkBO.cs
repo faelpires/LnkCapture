@@ -17,6 +17,7 @@ using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.InputFiles;
 
 namespace PodProgramar.LnkCapture.Data.BusinessObjects
 {
@@ -37,11 +38,26 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects
                     new HttpToSocks5Proxy(botConfiguration["Socks5Host"], int.Parse(botConfiguration["Socks5Port"])));
         }
 
-        public async Task<LinkResultDTO> GetChatLinksAsync(long id)
+        public async Task<LinkResultDTO> GetChatLinksAsync(long id, string search, string user, DateTime? startDate, DateTime? endDate, int? pageIndex, int? pageSize)
         {
             try
             {
-                var result = Context.Link.Where(p => p.ChatId == id).OrderByDescending(p => p.CreateDate);
+                if (!pageIndex.HasValue)
+                    pageIndex = 0;
+
+                if (!pageSize.HasValue)
+                    pageSize = 10;
+
+                var searchQuery = Context.Link.Where(p => p.ChatId == id
+                                                        && (string.IsNullOrEmpty(search) || p.Message.Contains(search))
+                                                        && (string.IsNullOrEmpty(user) || p.Username.Contains(user))
+                                                        && (!startDate.HasValue || p.CreateDate >= startDate.Value)
+                                                        && (!endDate.HasValue || p.CreateDate <= endDate.Value.AddDays(1).AddMilliseconds(-1))
+                                                    ).OrderByDescending(p => p.CreateDate);
+
+                var totalItems = Context.Link.Where(p => p.ChatId == id).Count();
+                var searchTotalItems = searchQuery.Count();
+
                 var chat = await _telegramBotClient.GetChatAsync(new ChatId(id));
 
                 var linkResultDTO = new LinkResultDTO
@@ -49,10 +65,12 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects
                     ChatId = id,
                     ChatTitle = chat?.Title,
                     CreateDate = DateTime.Now,
+                    TotalItems = totalItems,
+                    TotalSearchItems = searchTotalItems,
                     Items = new List<LinkDTO>()
                 };
 
-                foreach (var link in result)
+                foreach (var link in searchQuery.Skip(pageIndex.Value * pageSize.Value).Take(pageSize.Value))
                 {
                     var linkDTO = new LinkDTO
                     {
@@ -107,7 +125,7 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects
                 {
                     try
                     {
-                        await _telegramBotClient.SendPhotoAsync(update.Message.Chat.Id, new Telegram.Bot.Types.InputFiles.InputOnlineFile($"{rootImagesUri}/link_already_exists_{new Random().Next(1, 3)}.jpg"), $"{uri}\n{LinkResources.LinkAlreadyExists.GetRandomText()}", ParseMode.Default, true, update.Message.MessageId);
+                        await _telegramBotClient.SendPhotoAsync(update.Message.Chat.Id, new InputOnlineFile($"{rootImagesUri}/link_already_exists_{new Random().Next(1, 3)}.jpg"), $"{uri}\n{LinkResources.LinkAlreadyExists.GetRandomText()}", ParseMode.Default, true, update.Message.MessageId);
                     }
                     catch (Exception exception)
                     {
@@ -163,22 +181,6 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects
             }
         }
 
-        public async Task UpdateTitlesAsync()
-        {
-            foreach (var link in Context.Link)
-            {
-                string title = null;
-
-                if (UriIsValid(link.Uri, out title))
-                {
-                    if (title != null)
-                        link.Title = title.Length > 300 ? title.Substring(0, 300) : title;
-                }
-            }
-
-            Context.SaveChanges();
-        }
-
         public async Task SendLinksRecoverMessageAsync(Update update, string chatId)
         {
             if (update.Type != UpdateType.Message)
@@ -201,7 +203,7 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects
             }
         }
 
-        private bool UriExistsInDatabase(string uri, double chatId)
+        private bool UriExistsInDatabase(string uri, long chatId)
         {
             try
             {

@@ -15,7 +15,7 @@ namespace PodProgramar.LnkCapture.Telegram.Webhook.Pages
         private readonly string _purpose;
         private readonly IDataProtectionProvider _provider;
 
-        public LinkResultDTO Data { get; private set; }
+        public string ChatIdEncrypted { get; private set; }
 
         public IndexModel(IConfiguration configuration, IDataProtectionProvider provider, ILinkBO linkBO)
         {
@@ -27,10 +27,7 @@ namespace PodProgramar.LnkCapture.Telegram.Webhook.Pages
 
         public async Task<IActionResult> OnGetAsync(string id)
         {
-            var protector = _provider.CreateProtector(_purpose);
-            var chatId = protector.Unprotect(id);
-
-            Data = await _linkBO.GetChatLinksAsync(long.Parse(chatId));
+            ChatIdEncrypted = id;
 
             return Page();
         }
