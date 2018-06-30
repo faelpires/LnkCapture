@@ -117,6 +117,9 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="Forbidden" xml:space="preserve">
+    <value>Não consigo te enviar uma mensagem em particular, acho que você me bloqueou.</value>
+  </data>
   <data name="LinkAlreadyExists" xml:space="preserve">
     <value>Este link já passou por aqui...
 Já mandaram este link!

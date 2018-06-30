@@ -15,6 +15,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Telegram.Bot;
+using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.InputFiles;
@@ -181,7 +182,7 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects
             }
         }
 
-        public async Task SendLinksRecoverMessageAsync(Update update, string chatId)
+        public async Task SendLinksRecoverMessageAsync(Update update, string chatId, int userId)
         {
             if (update.Type != UpdateType.Message)
                 return;
@@ -190,15 +191,19 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects
             {
                 try
                 {
-                    var chatListUri = Configuration.GetSection("AppConfiguration")["ChatListUri"];
+                    var rootUri = Configuration.GetSection("AppConfiguration")["RootUri"];
 
-                    await _telegramBotClient.SendTextMessageAsync(update.Message.Chat.Id, $"{LinkResources.LinksRecover} {chatListUri}/{chatId}", ParseMode.Default, true, true, update.Message.MessageId);
+                    await _telegramBotClient.SendTextMessageAsync(userId, $"{LinkResources.LinksRecover} {rootUri}/{chatId}", ParseMode.Default, true, true);
+                }
+                catch (ApiRequestException exception)
+                {
+                    _logger.LogError(exception.Message);
+
+                    await _telegramBotClient.SendTextMessageAsync(update.Message.Chat.Id, $"{LinkResources.Forbidden}", ParseMode.Default, true, true);
                 }
                 catch (Exception exception)
                 {
                     _logger.LogError(exception.Message);
-
-                    throw;
                 }
             }
         }

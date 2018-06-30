@@ -1,0 +1,87 @@
+﻿@page
+@model PodProgramar.LnkCapture.Telegram.Webhook.Pages.IndexModel
+@{
+    ViewData["Title"] = "Index";
+}
+<html lang="en">
+<head>
+    <title>LinkCapture</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="~/lib/bootstrap/css/bootstrap.min.css" />
+    <script src="~/lib/jquery/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/js/bootstrap.min.js"></script>
+    <script src="~/js/Index.js"></script>
+</head>
+<body>
+
+    <div class="container px-2">
+
+        <div class="row mt-3"></div>
+
+        <h5>Group: <span id="chatTitle"> </span></h5>
+
+        <form>
+            @Html.HiddenFor(p => p.ChatIdEncrypted, new { @id = "ChatIdEncrypted" })
+            <div class="row">
+                <div class="col-md-5 col-12">
+                    <label for="search">Search:</label>
+                    <input type="text" id="search" class="form-control" />
+                </div>
+                <div class="col-md-3 col-12">
+                    <label for="search">User:</label>
+                    <input type="text" id="user" class="form-control" />
+                </div>
+                <div class="col-md-2 col-6">
+                    <label for="search">Start Date:</label>
+                    <input type="date" id="startDate" value="@DateTime.Now.AddDays(-30).ToString("yyyy-MM-dd")" class="form-control" />
+                </div>
+                <div class="col-md-2 col-6">
+                    <label for="search">End Date:</label>
+                    <input type="date" id="endDate" value="@DateTime.Now.ToString("yyyy-MM-dd")" class="form-control" />
+                </div>
+            </div>
+
+            <div class="d-flex mt-3 justify-content-between">
+                <div>
+                </div>
+                <div>
+                    <button id="btnFilter" type="button" class="btn">Apply Filters</button>
+                </div>
+            </div>
+        </form>
+
+        <div class="row mt-3"></div>
+
+        <div class="row">
+            <div class="col-md-3 col-6">
+                <p>Total items: <span id="totalItems"> </span></p>
+            </div>
+            <div class="col-md-3 col-6">
+                <p>Total searched: <span id="totalSearchItems"> </span></p>
+            </div>
+        </div>
+
+        <div class="row mt-3"></div>
+
+        <div class="table-responsive">
+            <table id="tblinks" class="table table-striped">
+                <thead class="thead-dark">
+                    <tr>
+                        <th style="width:100%">Link</th>
+                        <th style="min-width: 155px;">User</th>
+                        <th style="min-width: 155px;">Create</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-6 offset-lg-3 py-5 d-flex">
+                <ul class="pagination mx-auto"></ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,8 @@
+version: '3.4'
+
+services:
+  podprogramar.lnkcapture.telegram.webhook:
+    image: ${DOCKER_REGISTRY}podprogramarlnkcapturetelegramwebhook
+    build:
+      context: .
+      dockerfile: PodProgramar.LnkCapture.Telegram.Webhook/Dockerfile

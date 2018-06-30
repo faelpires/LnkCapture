@@ -61,6 +61,15 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Não consigo te enviar uma mensagem em particular, acho que você me bloqueou..
+        /// </summary>
+        internal static string Forbidden {
+            get {
+                return ResourceManager.GetString("Forbidden", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Este link já passou por aqui...
         ///Já mandaram este link!
         ///Esse link não passou por aqui outro dia desses?

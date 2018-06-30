@@ -21,7 +21,7 @@ function search(pageIndex) {
     $.ajax({
         type: "GET",
         contentType: "application/json",
-        url: "/api/Link/" + $('#ChatIdEncrypted').val(),
+        url: "/api/Link/" + encodeURIComponent($('#ChatIdEncrypted').val()),
         data: data,
         dataType: "json"
     }).done(function (data) {

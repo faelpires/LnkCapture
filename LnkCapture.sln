@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27703.2026
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PodProgramar.LnkCapture.Telegram.Webhook", "PodProgramar.LnkCapture.Dialogflow.Webhook\PodProgramar.LnkCapture.Telegram.Webhook.csproj", "{5B9A1414-B5A0-47F7-B43E-9453E8AA2C4D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PodProgramar.LnkCapture.Telegram.Webhook", "PodProgramar.LnkCapture.Telegram.Webhook\PodProgramar.LnkCapture.Telegram.Webhook.csproj", "{5B9A1414-B5A0-47F7-B43E-9453E8AA2C4D}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Services", "Services", "{422864F9-2D60-456B-870A-2EB48237C515}"
 EndProject
@@ -20,6 +20,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PodProgramar.Utils", "PodProgramar.Utils\PodProgramar.Utils.csproj", "{B3F30919-61FE-4933-B767-94C95BA29A10}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PodProgramar.LnkCapture.Data.DTO", "PodProgramar.LnkCapture.Data.DTO\PodProgramar.LnkCapture.Data.DTO.csproj", "{4141876A-EC0A-4CE5-A253-64B296A28F58}"
+EndProject
+Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{44EC5E49-1398-4A39-85F7-B26D5D965C8F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -51,6 +53,10 @@ Global
 		{4141876A-EC0A-4CE5-A253-64B296A28F58}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4141876A-EC0A-4CE5-A253-64B296A28F58}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4141876A-EC0A-4CE5-A253-64B296A28F58}.Release|Any CPU.Build.0 = Release|Any CPU
+		{44EC5E49-1398-4A39-85F7-B26D5D965C8F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{44EC5E49-1398-4A39-85F7-B26D5D965C8F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{44EC5E49-1398-4A39-85F7-B26D5D965C8F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{44EC5E49-1398-4A39-85F7-B26D5D965C8F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
