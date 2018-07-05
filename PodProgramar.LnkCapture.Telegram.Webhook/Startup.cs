@@ -1,10 +1,13 @@
-﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
 using PodProgramar.LnkCapture.Data.BusinessObjects;
 using PodProgramar.LnkCapture.Data.DAL;
+using System.IO;
 
 namespace PodProgramar.LnkCapture.Telegram.Webhook
 {
@@ -24,15 +27,11 @@ namespace PodProgramar.LnkCapture.Telegram.Webhook
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc()
-                 .AddRazorPagesOptions(options =>
-                 {
-                     options.Conventions.AddPageRoute("/Index", "/{id}");
-                 })
-                 .AddJsonOptions(o =>
-                 {
-                     o.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
-                     o.SerializerSettings.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
-                 });
+                    .AddJsonOptions(o =>
+                    {
+                        o.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
+                        o.SerializerSettings.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
+                    });
 
             services.AddSingleton(_ => Configuration);
             services.AddDbContext<LnkCaptureContext>(options => options.UseSqlServer(Configuration.GetConnectionString("LnkCaptureDatabase")));
@@ -48,7 +47,11 @@ namespace PodProgramar.LnkCapture.Telegram.Webhook
             }
 
             app.UseMvc();
-            app.UseStaticFiles();
+
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                ServeUnknownFileTypes = true
+            });
         }
     }
 }
