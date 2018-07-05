@@ -9,7 +9,7 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects
     {
         Task SaveLinkAsync(Update update);
 
-        Task SendLinksRecoverMessageAsync(Update update, string chatId, int userId);
+        Task SendLinksRecoverMessageAsync(Update update);
 
         Task<LinkResultDTO> GetChatLinksAsync(long id, string search, string user, DateTime? startDate, DateTime? endDate, int? pageIndex, int? pageSize);
     }

@@ -1,0 +1,7 @@
+﻿.card.data-table {
+    margin-bottom: 90px !important
+}
+
+    .card.data-table th {
+        min-width: 160px;
+    }

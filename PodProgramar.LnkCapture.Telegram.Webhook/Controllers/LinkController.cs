@@ -21,13 +21,14 @@ namespace PodProgramar.LnkCapture.Telegram.Webhook.Controllers
             _encryptionKey = _configuration.GetSection("AppConfiguration")["EncryptionKey"];
         }
 
-        [HttpGet("{id}")]
-        public async Task<IActionResult> Get(string id, [FromQuery(Name = "search")] string search = null,
-                                                        [FromQuery(Name = "user")]string user = null,
-                                                        [FromQuery(Name = "startDate")]DateTime? startDate = null,
-                                                        [FromQuery(Name = "endDate")] DateTime? endDate = null,
-                                                        [FromQuery(Name = "pageIndex")] int? pageIndex = null,
-                                                        [FromQuery(Name = "pageSize")] int? pageSize = null)
+        [HttpGet]
+        public async Task<IActionResult> Get([FromQuery(Name = "id")] string id,
+                                             [FromQuery(Name = "search")] string search = null,
+                                             [FromQuery(Name = "user")]string user = null,
+                                             [FromQuery(Name = "startDate")]DateTime? startDate = null,
+                                             [FromQuery(Name = "endDate")] DateTime? endDate = null,
+                                             [FromQuery(Name = "pageIndex")] int? pageIndex = null,
+                                             [FromQuery(Name = "pageSize")] int? pageSize = null)
         {
             var chatId = Encryptor.DecryptString(Uri.EscapeDataString(id) != id ? Uri.UnescapeDataString(id) : id, _encryptionKey);
 

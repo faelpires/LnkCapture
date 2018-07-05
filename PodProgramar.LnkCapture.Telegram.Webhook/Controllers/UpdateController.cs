@@ -1,9 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using PodProgramar.LnkCapture.Data.BusinessObjects;
-using PodProgramar.Utils.Cryptography;
-using System;
-using System.Text.Encodings.Web;
+using System.Linq;
 using System.Threading.Tasks;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -27,19 +25,23 @@ namespace PodProgramar.LnkCapture.Telegram.Webhook.Controllers
         [HttpPost]
         public async Task<IActionResult> Post([FromBody]Update update)
         {
-            if (
-                    (update.Type == UpdateType.Message && (update.Message.Text == "/linksurl@LnkCaptureBot" || update.Message.Text == "/linksurl"))
-                    ||
-                    (update.Type == UpdateType.EditedMessage && (update.EditedMessage.Text == "/linksurl@LnkCaptureBot" || update.EditedMessage.Text == "/linksurl"))
-                )
+            if (update.Type == UpdateType.Message && update.Message.Type == MessageType.Text)
             {
-                var chatId = Uri.EscapeDataString(Encryptor.EncryptString(update.Message.Chat.Id.ToString(), _encryptionKey));
-                var userId = update.Message.From.Id;
+                var validBotCommands = new[] { "/linksurl@LnkCaptureBot", "/linksurl" };
+                MessageEntity entity = null;
+                string entityValue = null;
 
-                await _linkBO.SendLinksRecoverMessageAsync(update, chatId, userId);
+                if (update.Message.Entities != null && update.Message.EntityValues != null)
+                {
+                    entity = update.Message.Entities.FirstOrDefault();
+                    entityValue = update.Message.EntityValues.FirstOrDefault();
+                }
+
+                if (entity != null && entityValue != null && entity.Type == MessageEntityType.BotCommand && validBotCommands.Contains(entityValue))
+                    await _linkBO.SendLinksRecoverMessageAsync(update);
+                else
+                    await _linkBO.SaveLinkAsync(update);
             }
-            else
-                await _linkBO.SaveLinkAsync(update);
 
             return Ok();
         }

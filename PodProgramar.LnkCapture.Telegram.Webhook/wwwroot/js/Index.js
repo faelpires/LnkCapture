@@ -1,101 +1,245 @@
-﻿var pageSize = 10;
+﻿var $$ = Dom7;
+var pageSize = 10;
+var searchTerm;
+var user;
+var startDate;
+var endDate;
+var preloader;
 
-$(document).ready(function () {
-    $('#btnFilter').on('click', function () {
-        search(0);
-    });
+var app = new Framework7({
+    root: '#app',
+    name: 'LnkCapture',
+    id: 'podprogramar.lnkcapture',
+    theme: 'md',
+    panel: {
+        swipe: 'left',
+    },
+    on: {
+        pageInit: function (page) {
+            startDate = $$('#DefaultStartDate').val();
+            endDate = $$('#DefaultEndDate').val();
 
-    search(0);
+            if (page.name == "home")
+                search(0);
+        }
+    },
+    routes: [
+        {
+            path: '/',
+            name: "home",
+            pageInit: function (event, page) {
+            }
+        },
+        {
+            path: '/filters/',
+            content: '\
+                      <div class="page">\
+                        <div class="navbar">\
+                          <div class="navbar-inner sliding">\
+                            <div class="left">\
+                              <a href="#" class="link back">\
+                                <i class="icon icon-back"></i>\
+                                <span class="ios-only">Back</span>\
+                              </a>\
+                            </div>\
+                            <div class="title">Filters</div>\
+                          </div>\
+                        </div>\
+                        <div class="fab fab-right-bottom">\
+                            <a href="#" id="applyFilters" class="">\
+                                <i class="icon material-icons md-only">done</i>\
+                            </a>\
+                        </div>\
+                        <div class="page-content">\
+                          <div class="block">\
+                            <div class="list no-hairlines-md">\
+                              <ul>\
+                                <li class="item-content item-input">\
+                                  <div class="item-inner">\
+                                    <div class="item-title item-label">Search</div>\
+                                    <div class="item-input-wrap">\
+                                      <input type="text" id="search" name="search">\
+                                  </div>\
+                                </li>\
+                                <li class="item-content item-input">\
+                                  <div class="item-inner">\
+                                    <div class="item-title item-label">User</div>\
+                                    <div class="item-input-wrap">\
+                                      <input type="text" id="user" name="user">\
+                                    </div>\
+                                  </div>\
+                                </li>\
+                                <li class="item-content item-input item-input-with-value">\
+                                  <div class="item-inner">\
+                                  <div class="item-title item-label">Start Date</div>\
+                                    <div class="item-input-wrap">\
+                                      <input id="startDate" name="startDate" type="date" value="' + $$('#DefaultStartDate').val() + '" placeholder="Please choose..." class="input-with-value">\
+                                    </div>\
+                                  </div>\
+                                </li>\
+                                <li class="item-content item-input item-input-with-value">\
+                                  <div class="item-inner">\
+                                  <div class="item-title item-label">End Date</div>\
+                                    <div class="item-input-wrap">\
+                                      <input id="endDate" name="endDate" type="date" value="' + $$('#DefaultEndDate').val() + '" placeholder="Please choose..." class="input-with-value">\
+                                    </div>\
+                                  </div>\
+                                </li>\
+                              </ul >\
+                            </div>\
+                        </div>\
+                      </div>\
+                    ',
+            on: {
+                pageBeforeIn: function (event, page) {
+                    $$('#search').val(searchTerm);
+                    $$('#user').val(user);
+                    $$('#startDate').val(startDate);
+                    $$('#endDate').val(endDate);
+
+                    $$('#applyFilters').on('click', function () {
+                        searchTerm = $$('#search').val();
+                        user = $$('#user').val();
+                        startDate = $$('#startDate').val();
+                        endDate = $$('#endDate').val();
+                        pageIndex = 0;
+                        pageSize = pageSize;
+
+                        search(0);
+                        app.router.back();
+                    });
+                },
+                pageAfterIn: function (event, page) {
+                },
+                pageInit: function (event, page) {
+                },
+                pageBeforeRemove: function (event, page) {
+                }
+            }
+        }
+    ]
+});
+
+var mainView = app.views.create('.view-main', {
+    main: true,
 });
 
 function search(pageIndex) {
+    preloader = app.dialog.preloader();
+
     var data = {
-        search: $('#search').val(),
-        user: $('#user').val(),
-        startDate: $('#startDate').val(),
-        endDate: $('#endDate').val(),
+        id: encodeURIComponent($$('#ChatIdEncrypted').val()),
+        search: searchTerm,
+        user: user,
+        startDate: startDate,
+        endDate: endDate,
         pageIndex: pageIndex,
         pageSize: pageSize
     }
 
-    $.ajax({
-        type: "GET",
-        contentType: "application/json",
-        url: "/api/Link/" + encodeURIComponent($('#ChatIdEncrypted').val()),
+    app.request({
+        url: "/api/link",
+        dataType: 'json',
+        type: 'get',
         data: data,
-        dataType: "json"
-    }).done(function (data) {
-        $('#tblinks tbody').empty();
-        $('.pagination').empty();
+        crossDomain: true,
+        headers: {
+            'Accept': 'application/json; odata=verbose', 'Content-Type': 'application/json'
+        },
+        statusCode: {
+            404: function (xhr) {
+                console.log('page not found');
+            }
+        },
+        complete: function (data) {
+            preloader.close();
+        },
+        success: function (response) {
+            $$('#tblinks tbody').empty();
+            $$('.data-table-footer').empty();
 
-        $('#chatTitle').text(data.chatTitle);
-        $('#totalItems').text(data.totalItems);
-        $('#totalSearchItems').text(data.totalSearchItems);
+            for (var i = 0; i < response.items.length; i++) {
+                var tr = $$('<tr>')
+                var tdTitle = $$('<td style="white-space: nowrap">');
+                var aTitle = $$('<a class="link external" target="_blank" href=' + response.items[i].uri + '>');
+                var tdUser = $$('<td>');
+                var tdCreate = $$('<td>');
+                var createDate = new Date(response.items[i].createDate);
 
-        for (var i = 0; i < data.items.length; i++) {
-            var tr = $('<tr/>')
-            var tdTitle = $('<td/>', { css: { 'white-space': 'nowrap' } });
-            var aTitle = $('<a/>', { target: '_blank', href: data.items[i].uri });
-            var tdUser = $('<td/>');
-            var tdCreate = $('<td/>');
-            var createDate = new Date(data.items[i].createDate);
+                if (response.items[i].title != undefined) {
+                    if (response.items[i].title.length < 55)
+                        aTitle.text(response.items[i].title);
+                    else
+                        aTitle.text(response.items[i].title.substring(0, 52) + '...');
+                } else {
+                    if (response.items[i].uri.length < 55)
+                        aTitle.text(response.items[i].uri);
+                    else
+                        aTitle.text(response.items[i].uri.substring(0, 52) + '...');
+                }
 
-            if (data.items[i].title != undefined) {
-                if (data.items[i].title.length < 75)
-                    aTitle.text(data.items[i].title);
+                if (response.items[i].username != undefined) {
+                    tdUser.text(response.items[i].username);
+                } else if (response.items[i].userId != undefined)
+                    tdUser.text(response.items[i].userId);
                 else
-                    aTitle.text(data.items[i].title.substring(0, 73) + '...');
-            } else {
-                if (data.items[i].uri.length < 75)
-                    aTitle.text(data.items[i].uri);
-                else
-                    aTitle.text(data.items[i].uri.substring(0, 73) + '...');
+                    tdUser.text('-');
+
+                tdCreate.text(formatDate(createDate));
+
+                tdTitle.append(aTitle);
+                tr.append(tdTitle);
+                tr.append(tdUser);
+                tr.append(tdCreate);
+
+                $$('#tblinks tbody').append(tr);
             }
 
-            if (data.items[i].username != undefined) {
-                tdUser.text(data.items[i].username);
-            } else if (data.items[i].userId != undefined)
-                tdUser.text(data.items[i].userId);
-            else
-                tdUser.text('-');
+            var lastPage = Math.ceil(response.totalSearchItems / pageSize);
+            var paginationSelect = $$('<div class="data-table-rows-select">\
+                                            Per page:\
+                                            <div class="input input-dropdown">\
+                                                <select>\
+                                                    <option value="10" ' + (pageSize == 10 ? 'selected' : '') + '>10</option>\
+                                                    <option value="25" ' + (pageSize == 25 ? 'selected' : '') + '>25</option>\
+                                                    <option value="50" ' + (pageSize == 50 ? 'selected' : '') + '>50</option>\
+                                                    <option value="100" ' + (pageSize == 100 ? 'selected' : '') + '>100</option>\
+                                                </select>\
+                                            </div>\
+                                        </div>');
 
-            tdCreate.text(formatDate(createDate));
+            $$(paginationSelect).find('select').on('change', function () {
+                pageSize = $$('.data-table-rows-select select').val();
+                search(0);
+            });
 
-            tdTitle.append(aTitle);
-            tr.append(tdTitle);
-            tr.append(tdUser);
-            tr.append(tdCreate);
+            var pagination = $$('<div class="data-table-pagination"></div>');
+            var paginationLabel = $$('<span class="data-table-pagination-label"> ' + ((pageIndex * pageSize) + 1) + ' - ' + (((pageIndex * pageSize)) + response.items.length) + ' of ' + response.totalSearchItems + '</span>');
+            var paginationPrevious = $$('<a href="#" class="link ' + (pageIndex == 0 ? 'disabled' : '') + '">\
+                                            <i class="icon icon-prev color-gray"></i>\
+                                        </a>');
 
-            $('#tblinks tbody').append(tr);
-        }
+            var paginationNext = $$('<a href="#" class="link ' + (pageIndex + 1 == lastPage ? 'disabled' : '') + '">\
+                                        <i class="icon icon-next color-gray"></i>\
+                                    </a>');
 
-        var totalPaginationButtons = 6;
-        var startPagination = 1;
-        var endPagination = Math.ceil(data.totalSearchItems / pageSize) + 1;
+            paginationPrevious.on('click', function (e) {
+                search(pageIndex - 1);
+            });
 
-        if (endPagination > totalPaginationButtons) {
-            if (pageIndex + 1 >= totalPaginationButtons) {
-                startPagination = pageIndex - 3;
-                endPagination = pageIndex + 3;
-            }
-            else
-                endPagination = totalPaginationButtons + 1;
-        }
+            paginationNext.on('click', function (e) {
+                search(pageIndex + 1);
+            });
 
-        for (var i = startPagination; i < endPagination; i++) {
-            var li = $('<li/>', { class: 'page-item' });
-            var a = $('<a/>', { class: 'page-link', href: '#', text: i });
+            pagination.append(paginationLabel);
+            pagination.append(paginationPrevious);
+            pagination.append(paginationNext);
 
-            if (i == pageIndex + 1)
-                li.addClass('active');
-
-            a.on('click', { pageIndex: i - 1 }, function (e) {
-                search(e.data.pageIndex);
-            })
-
-            li.append(a);
-
-            $('.pagination').append(li);
+            $$('.data-table-footer').append(paginationSelect);
+            $$('.data-table-footer').append(pagination);
+        },
+        error: function (xhr, status) {
+            console.log(status);
         }
     });
 }

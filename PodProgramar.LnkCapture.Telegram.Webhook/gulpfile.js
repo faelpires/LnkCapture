@@ -19,12 +19,10 @@ gulp.task("minify", function () {
 
 // Dependency Dirs
 var deps = {
-    "jquery": {
-        "dist/*": ""
-    },
-    "bootstrap": {
-        "dist/**/*": ""
-    },
+    "framework7": {
+        "css/*": "",
+        "js/*": ""
+    }
 };
 
 gulp.task("clean", function (cb) {

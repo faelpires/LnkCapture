@@ -61,19 +61,28 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Não consigo te enviar uma mensagem em particular, acho que você me bloqueou..
+        ///   Looks up a localized string similar to 😵 Eu vou te enviar este link na chat privado, porém antes preciso que você incie uma conversa comigo. Faz assim, clique neste nome @LnkCapture e depois no botão &quot;start&quot; ou &quot;começar&quot;, depois volte aqui e solicite o link novamente..
         /// </summary>
-        internal static string Forbidden {
+        internal static string ChatNotInitiatedException {
             get {
-                return ResourceManager.GetString("Forbidden", resourceCulture);
+                return ResourceManager.GetString("ChatNotInitiatedException", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Este link já passou por aqui...
-        ///Já mandaram este link!
-        ///Esse link não passou por aqui outro dia desses?
-        ///Bacana o link, mas já mandaram ele por aqui..
+        ///   Looks up a localized string similar to Não consigo te enviar uma mensagem em particular com o link. Acho que você me bloqueou 😢..
+        /// </summary>
+        internal static string ForbiddenException {
+            get {
+                return ResourceManager.GetString("ForbiddenException", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 🙄 Este link já passou por aqui...
+        ///🤔Já mandaram este link!
+        ///😪 Esse link não passou por aqui outro dia desses?
+        ///😒 Bacana o link, mas já mandaram ele por aqui..
         /// </summary>
         internal static string LinkAlreadyExists {
             get {
@@ -82,9 +91,9 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cara! Esse link não abriu. Não vou salvar por enquanto não.
-        ///Tem certeza que este link está certo? Não foi pra lugar nenhum.
-        ///Tem alguma coisa errada com este link..
+        ///   Looks up a localized string similar to 😖 Cara! Esse link não abriu. Não vou salvar por enquanto não.
+        ///😱Tem certeza que este link está certo? Não foi pra lugar nenhum.
+        ///😵 Tem alguma coisa errada com este link..
         /// </summary>
         internal static string LinkInvalid {
             get {
@@ -93,17 +102,17 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Salvei seu link!
-        ///Deixa que eu guardo este link para você.
-        ///Guardei este endereço!
-        ///Este link não escapa, tá salvo!
-        ///Hum... Parece um conteúdo interessante. Deixa eu guardar aqui...
-        ///Tá salvo o link, em nome de Odin!
-        ///Como emissário de São Longuinho, guardei o link pra ficar fácil de encontrar depois.
-        ///Opa! Guardei esse link.
-        ///Guardei o link no meu bolso aqui.
-        ///Bacana este link, vou guardar aqui pra não perder.
-        ///Link salvo! Pode ir mandando que eu tô guardando..
+        ///   Looks up a localized string similar to 👍 Salvei seu link!
+        ///👊 Deixa que eu guardo este link para você.
+        ///😀 Guardei este endereço!
+        ///💾 Este link não escapa, tá salvo!
+        ///😜 Hum... Parece um conteúdo interessante. Deixa eu guardar aqui...
+        ///😬 Tá salvo o link, em nome de Odin!
+        ///🙏 Como emissário de São Longuinho, guardei o link pra ficar fácil de encontrar depois.
+        ///👌 Opa! Guardei esse link.
+        ///👜 Guardei o link no meu bolso aqui.
+        ///✍ Bacana este link, vou guardar aqui pra não perder.
+        ///🤗 Link salvo! Pode ir mandando que eu tô guardando..
         /// </summary>
         internal static string LinkSaved {
             get {
@@ -112,11 +121,20 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Com esta url você consegue recuperar os links salvos nesta conversa:.
+        ///   Looks up a localized string similar to 👉 Com este endereço você consegue recuperar os links salvos no chat{0}:.
         /// </summary>
         internal static string LinksRecover {
             get {
                 return ResourceManager.GetString("LinksRecover", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 😓 Alguma coisa deu errado aqui! Não consigo executar o que você me pediu. Tenta de novo mais tarde por favor..
+        /// </summary>
+        internal static string UnknownException {
+            get {
+                return ResourceManager.GetString("UnknownException", resourceCulture);
             }
         }
     }

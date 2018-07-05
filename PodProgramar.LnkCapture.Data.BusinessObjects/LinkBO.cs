@@ -6,6 +6,7 @@ using PodProgramar.LnkCapture.Data.BusinessObjects.Resources;
 using PodProgramar.LnkCapture.Data.DAL;
 using PodProgramar.LnkCapture.Data.DTO;
 using PodProgramar.LnkCapture.Data.Models;
+using PodProgramar.Utils.Cryptography;
 using PodProgramar.Utils.Text.Extensions;
 using System;
 using System.Collections.Generic;
@@ -26,10 +27,12 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects
     {
         private readonly ILogger _logger;
         private readonly TelegramBotClient _telegramBotClient;
+        private readonly string _encryptionKey;
 
         public LinkBO(IConfiguration configuration, LnkCaptureContext lnkCaptureContext, ILogger<LinkBO> logger) : base(lnkCaptureContext, configuration)
         {
             var botConfiguration = Configuration.GetSection("BotConfiguration");
+            _encryptionKey = Configuration.GetSection("AppConfiguration")["EncryptionKey"];
 
             _logger = logger;
             _telegramBotClient = string.IsNullOrEmpty(botConfiguration["Socks5Host"])
@@ -126,7 +129,14 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects
                 {
                     try
                     {
-                        await _telegramBotClient.SendPhotoAsync(update.Message.Chat.Id, new InputOnlineFile($"{rootImagesUri}/link_already_exists_{new Random().Next(1, 3)}.jpg"), $"{uri}\n{LinkResources.LinkAlreadyExists.GetRandomText()}", ParseMode.Default, true, update.Message.MessageId);
+                        var message = new StringBuilder();
+
+                        if (uris.Length > 1)
+                            message.Append(uri).Append("\n");
+
+                        message.Append(LinkResources.LinkAlreadyExists.GetRandomText());
+
+                        await _telegramBotClient.SendPhotoAsync(update.Message.Chat.Id, new InputOnlineFile($"{rootImagesUri}/link_already_exists_{new Random().Next(1, 3)}.jpg"), message.ToString(), ParseMode.Default, true, update.Message.MessageId);
                     }
                     catch (Exception exception)
                     {
@@ -146,10 +156,14 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects
                             LinkId = Guid.NewGuid(),
                             Message = update.Message.Text,
                             Uri = uri,
-                            Title = title.Length > 300 ? title.Substring(0, 300) : title,
-                            Username = update.Message.From.Username,
                             UserId = update.Message.From.Id
                         };
+
+                        if (!string.IsNullOrEmpty(title))
+                            link.Title = title.Length > 300 ? title.Substring(0, 300) : title;
+
+                        if (!string.IsNullOrEmpty(update.Message.From.Username))
+                            link.Username = update.Message.From.Username;
 
                         Context.Link.Add(link);
                         Context.SaveChanges();
@@ -182,7 +196,7 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects
             }
         }
 
-        public async Task SendLinksRecoverMessageAsync(Update update, string chatId, int userId)
+        public async Task SendLinksRecoverMessageAsync(Update update)
         {
             if (update.Type != UpdateType.Message)
                 return;
@@ -192,18 +206,25 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects
                 try
                 {
                     var rootUri = Configuration.GetSection("AppConfiguration")["RootUri"];
+                    var chatId = Uri.EscapeDataString(Encryptor.EncryptString(update.Message.Chat.Id.ToString(), _encryptionKey));
 
-                    await _telegramBotClient.SendTextMessageAsync(userId, $"{LinkResources.LinksRecover} {rootUri}/{chatId}", ParseMode.Default, true, true);
+                    await _telegramBotClient.SendTextMessageAsync(update.Message.From.Id,
+                                                                  $"{string.Format(LinkResources.LinksRecover, string.IsNullOrEmpty(update.Message.Chat.Title) ? "" : $" {update.Message.Chat.Title}")} {rootUri}?id={chatId}",
+                                                                  ParseMode.Default, true, true);
                 }
-                catch (ApiRequestException exception)
+                catch (ChatNotInitiatedException)
                 {
-                    _logger.LogError(exception.Message);
-
-                    await _telegramBotClient.SendTextMessageAsync(update.Message.Chat.Id, $"{LinkResources.Forbidden}", ParseMode.Default, true, true);
+                    await _telegramBotClient.SendTextMessageAsync(update.Message.Chat.Id, $"{LinkResources.ChatNotInitiatedException}", ParseMode.Default, true, true, update.Message.MessageId);
+                }
+                catch (ForbiddenException)
+                {
+                    await _telegramBotClient.SendTextMessageAsync(update.Message.Chat.Id, $"{LinkResources.ForbiddenException}", ParseMode.Default, true, true, update.Message.MessageId);
                 }
                 catch (Exception exception)
                 {
                     _logger.LogError(exception.Message);
+
+                    await _telegramBotClient.SendTextMessageAsync(update.Message.Chat.Id, $"{LinkResources.UnknownException}", ParseMode.Default, true, true, update.Message.MessageId);
                 }
             }
         }
@@ -255,18 +276,25 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects
             {
                 using (var wc = new WebClient())
                 {
-                    wc.Headers.Add("User-Agent: Other");
+                    wc.Headers.Add("User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36");
                     string htmlContent = DownloadStringAwareOfEncoding(wc, new Uri(uri));
 
                     var document = new HtmlDocument();
                     document.LoadHtml(htmlContent);
 
-                    var title = document.DocumentNode.Descendants("title").FirstOrDefault();
+                    try
+                    {
+                        var title = document.DocumentNode.Descendants("title").FirstOrDefault();
 
-                    if (title != null)
-                        uriTitle = WebUtility.HtmlDecode(title.InnerText).Trim();
-                    else
+                        if (title != null)
+                            uriTitle = WebUtility.HtmlDecode(title.InnerText).Trim();
+                        else
+                            uriTitle = null;
+                    }
+                    catch (Exception)
+                    {
                         uriTitle = null;
+                    }
 
                     return true;
                 }
