@@ -1,4 +1,5 @@
 ﻿using PodProgramar.LnkCapture.Data.DTO;
+using PodProgramar.LnkCapture.Data.Models;
 using System;
 using System.Threading.Tasks;
 using Telegram.Bot.Types;
@@ -7,10 +8,8 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects
 {
     public interface ILinkBO
     {
-        Task SaveLinkAsync(Update update);
+        Task SaveAsync(Update update);
 
-        Task SendLinksRecoverMessageAsync(Update update);
-
-        Task<LinkResultDTO> GetChatLinksAsync(long id, string search, string user, DateTime? startDate, DateTime? endDate, int? pageIndex, int? pageSize);
+        Task<LinkResultDTO> GetAsync(LinkReader linkReader, bool isAPIRequest, string search, string user, DateTime? startDate, DateTime? endDate, int? pageIndex, int? pageSize);
     }
 }

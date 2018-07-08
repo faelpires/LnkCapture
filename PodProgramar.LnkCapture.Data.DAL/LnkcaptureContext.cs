@@ -11,6 +11,8 @@ namespace PodProgramar.LnkCapture.Data.DAL
         }
 
         public virtual DbSet<Link> Link { get; set; }
+        public virtual DbSet<LinkReader> LinkReader { get; set; }
+        public virtual DbSet<LinkReaderLog> LinkReaderLog { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -37,6 +39,34 @@ namespace PodProgramar.LnkCapture.Data.DAL
                 entity.Property(e => e.Username)
                     .HasMaxLength(100)
                     .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<LinkReader>(entity =>
+            {
+                entity.HasIndex(e => new { e.ChatId, e.UserId })
+                    .HasName("IX_LinkReader")
+                    .IsUnique();
+
+                entity.Property(e => e.LinkReaderId).HasDefaultValueSql("(newid())");
+
+                entity.Property(e => e.CreateDate)
+                    .HasColumnType("datetime")
+                    .HasDefaultValueSql("(getdate())");
+            });
+
+            modelBuilder.Entity<LinkReaderLog>(entity =>
+            {
+                entity.Property(e => e.LinkReaderLogId).HasDefaultValueSql("(newid())");
+
+                entity.Property(e => e.AccessDate)
+                    .HasColumnType("datetime")
+                    .HasDefaultValueSql("(getdate())");
+
+                entity.HasOne(d => d.LinkReader)
+                    .WithMany(p => p.LinkReaderLog)
+                    .HasForeignKey(d => d.LinkReaderId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_LinkReaderLog_LinkReader");
             });
 
             OnModelCreatingPartial(modelBuilder);

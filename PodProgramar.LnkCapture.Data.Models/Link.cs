@@ -9,8 +9,8 @@ namespace PodProgramar.LnkCapture.Data.Models
         public string Message { get; set; }
         public string Uri { get; set; }
         public string Title { get; set; }
-        public long ChatId { get; set; }
         public DateTime CreateDate { get; set; }
+        public long ChatId { get; set; }
         public string Username { get; set; }
         public int UserId { get; set; }
     }

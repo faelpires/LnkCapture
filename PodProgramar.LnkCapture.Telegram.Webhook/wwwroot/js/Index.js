@@ -16,11 +16,15 @@ var app = new Framework7({
     },
     on: {
         pageInit: function (page) {
+
+
             startDate = $$('#DefaultStartDate').val();
             endDate = $$('#DefaultEndDate').val();
 
             if (page.name == "home")
                 search(0);
+        },
+        pageAfterIn: function (page) {
         }
     },
     routes: [
@@ -92,6 +96,7 @@ var app = new Framework7({
                     ',
             on: {
                 pageBeforeIn: function (event, page) {
+
                     $$('#search').val(searchTerm);
                     $$('#user').val(user);
                     $$('#startDate').val(startDate);
@@ -121,14 +126,17 @@ var app = new Framework7({
 });
 
 var mainView = app.views.create('.view-main', {
-    main: true,
+    main: true
+});
+
+app.smartSelect.get(document.getElementById('chatId').element).on('closed', function () {
+    search(0);
 });
 
 function search(pageIndex) {
     preloader = app.dialog.preloader();
 
     var data = {
-        id: encodeURIComponent($$('#ChatIdEncrypted').val()),
         search: searchTerm,
         user: user,
         startDate: startDate,
@@ -138,13 +146,14 @@ function search(pageIndex) {
     }
 
     app.request({
-        url: "/api/link",
+        url: "/api/link/" + $$('#chatId')[0].selectedOptions[0].value,
         dataType: 'json',
         type: 'get',
         data: data,
         crossDomain: true,
         headers: {
-            'Accept': 'application/json; odata=verbose', 'Content-Type': 'application/json'
+            'Accept': 'application/json; odata=verbose', 'Content-Type': 'application/json',
+            'IsAPIRequest': false
         },
         statusCode: {
             404: function (xhr) {

@@ -17,17 +17,17 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Update="Resources\LinkResources.Designer.cs">
+    <Compile Update="Resources\MessageResources.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
-      <DependentUpon>LinkResources.resx</DependentUpon>
+      <DependentUpon>MessageResources.resx</DependentUpon>
     </Compile>
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Update="Resources\LinkResources.resx">
+    <EmbeddedResource Update="Resources\MessageResources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>LinkResources.Designer.cs</LastGenOutput>
+      <LastGenOutput>MessageResources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
 

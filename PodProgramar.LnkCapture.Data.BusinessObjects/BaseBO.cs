@@ -1,17 +1,17 @@
 ﻿using Microsoft.Extensions.Configuration;
-using PodProgramar.LnkCapture.Data.DAL;
+using Microsoft.Extensions.Logging;
 
 namespace PodProgramar.LnkCapture.Data.BusinessObjects
 {
     public abstract class BaseBO : IBO
     {
-        public LnkCaptureContext Context { get; }
         public IConfiguration Configuration { get; }
+        public ILogger Logger { get; set; }
 
-        public BaseBO(LnkCaptureContext lnkcaptureContext, IConfiguration configuration)
+        public BaseBO(IConfiguration configuration, ILogger logger)
         {
-            this.Context = lnkcaptureContext;
             this.Configuration = configuration;
+            this.Logger = logger;
         }
     }
 }

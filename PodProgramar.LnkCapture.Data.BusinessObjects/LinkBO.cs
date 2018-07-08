@@ -1,13 +1,10 @@
 ﻿using HtmlAgilityPack;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using MihaZupan;
-using PodProgramar.LnkCapture.Data.BusinessObjects.Resources;
 using PodProgramar.LnkCapture.Data.DAL;
 using PodProgramar.LnkCapture.Data.DTO;
 using PodProgramar.LnkCapture.Data.Models;
-using PodProgramar.Utils.Cryptography;
-using PodProgramar.Utils.Text.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -15,34 +12,48 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
-using Telegram.Bot;
-using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using Telegram.Bot.Types.InputFiles;
 
 namespace PodProgramar.LnkCapture.Data.BusinessObjects
 {
-    public class LinkBO : BaseBO, ILinkBO
+    public class LinkBO : BaseDataBO, ILinkBO
     {
-        private readonly ILogger _logger;
-        private readonly TelegramBotClient _telegramBotClient;
-        private readonly string _encryptionKey;
+        #region Fields
 
-        public LinkBO(IConfiguration configuration, LnkCaptureContext lnkCaptureContext, ILogger<LinkBO> logger) : base(lnkCaptureContext, configuration)
+        private readonly IMessageBO _messageBO;
+        private readonly IChatBO _chatBO;
+        private readonly ILinkReaderLogBO _linkReaderLogBO;
+
+        #endregion Fields
+
+        #region Constructors
+
+        public LinkBO(IConfiguration configuration, LnkCaptureContext lnkCaptureContext, ILogger<LinkBO> logger, IMessageBO messageBO, IChatBO chatBO, ILinkReaderLogBO linkReaderLogBO) : base(lnkCaptureContext, configuration, logger)
         {
-            var botConfiguration = Configuration.GetSection("BotConfiguration");
-            _encryptionKey = Configuration.GetSection("AppConfiguration")["EncryptionKey"];
-
-            _logger = logger;
-            _telegramBotClient = string.IsNullOrEmpty(botConfiguration["Socks5Host"])
-                ? new TelegramBotClient(botConfiguration["BotToken"])
-                : new TelegramBotClient(
-                    botConfiguration["BotToken"],
-                    new HttpToSocks5Proxy(botConfiguration["Socks5Host"], int.Parse(botConfiguration["Socks5Port"])));
+            Logger = logger;
+            _messageBO = messageBO;
+            _chatBO = chatBO;
+            _linkReaderLogBO = linkReaderLogBO;
         }
 
-        public async Task<LinkResultDTO> GetChatLinksAsync(long id, string search, string user, DateTime? startDate, DateTime? endDate, int? pageIndex, int? pageSize)
+        #endregion Constructors
+
+        #region Classes
+
+        private class UriValidResult
+        {
+            public bool IsValid { get; set; }
+            public string UriTitle { get; set; }
+        }
+
+        #endregion Classes
+
+        #region Methods
+
+        #region Public
+
+        public async Task<LinkResultDTO> GetAsync(LinkReader linkReader, bool isAPIRequest, string search, string user, DateTime? startDate, DateTime? endDate, int? pageIndex, int? pageSize)
         {
             try
             {
@@ -52,29 +63,30 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects
                 if (!pageSize.HasValue)
                     pageSize = 10;
 
-                var searchQuery = Context.Link.Where(p => p.ChatId == id
+                var searchQuery = Context.Link.Where(p => p.ChatId == linkReader.ChatId
                                                         && (string.IsNullOrEmpty(search) || p.Message.Contains(search))
                                                         && (string.IsNullOrEmpty(user) || p.Username.Contains(user))
                                                         && (!startDate.HasValue || p.CreateDate >= startDate.Value)
                                                         && (!endDate.HasValue || p.CreateDate <= endDate.Value.AddDays(1).AddMilliseconds(-1))
                                                     ).OrderByDescending(p => p.CreateDate);
 
-                var totalItems = Context.Link.Where(p => p.ChatId == id).Count();
-                var searchTotalItems = searchQuery.Count();
+                var totalItems = await Context.Link.Where(p => p.ChatId == linkReader.ChatId).CountAsync();
+                var totalSearchItems = await searchQuery.CountAsync();
+                var searchItems = await searchQuery.Skip(pageIndex.Value * pageSize.Value).Take(pageSize.Value).ToListAsync();
 
-                var chat = await _telegramBotClient.GetChatAsync(new ChatId(id));
+                var chat = await _chatBO.GetChatAsync(linkReader.ChatId);
 
                 var linkResultDTO = new LinkResultDTO
                 {
-                    ChatId = id,
+                    ChatId = linkReader.ChatId,
                     ChatTitle = chat?.Title,
                     CreateDate = DateTime.Now,
                     TotalItems = totalItems,
-                    TotalSearchItems = searchTotalItems,
+                    TotalSearchItems = totalSearchItems,
                     Items = new List<LinkDTO>()
                 };
 
-                foreach (var link in searchQuery.Skip(pageIndex.Value * pageSize.Value).Take(pageSize.Value))
+                foreach (var link in searchItems)
                 {
                     var linkDTO = new LinkDTO
                     {
@@ -91,17 +103,19 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects
                     linkResultDTO.Items.Add(linkDTO);
                 }
 
+                await _linkReaderLogBO.SaveLogAsync(linkReader.LinkReaderId, isAPIRequest, searchItems.Count());
+
                 return linkResultDTO;
             }
             catch (Exception exception)
             {
-                _logger.LogError(exception.Message);
+                Logger.LogError(exception.Message);
 
                 throw;
             }
         }
 
-        public async Task SaveLinkAsync(Update update)
+        public async Task SaveAsync(Update update)
         {
             if (update.Type != UpdateType.Message)
                 return;
@@ -118,7 +132,6 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects
                 return;
 
             var rootUri = Configuration.GetSection("AppConfiguration")["RootUri"];
-            var rootImagesUri = Configuration.GetSection("AppConfiguration")["ImagesUri"];
 
             foreach (var uri in uris)
             {
@@ -127,107 +140,55 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects
 
                 if (UriExistsInDatabase(uri, update.Message.Chat.Id))
                 {
-                    try
-                    {
-                        var message = new StringBuilder();
-
-                        if (uris.Length > 1)
-                            message.Append(uri).Append("\n");
-
-                        message.Append(LinkResources.LinkAlreadyExists.GetRandomText());
-
-                        await _telegramBotClient.SendPhotoAsync(update.Message.Chat.Id, new InputOnlineFile($"{rootImagesUri}/link_already_exists_{new Random().Next(1, 3)}.jpg"), message.ToString(), ParseMode.Default, true, update.Message.MessageId);
-                    }
-                    catch (Exception exception)
-                    {
-                        _logger.LogError(exception.Message);
-                    }
+                    await _messageBO.SendLinkAlreadyExistsMessageAsync(update.Message.Chat.Id, uri, uris.Length, update.Message.MessageId);
                 }
                 else
                 {
-                    string title = null;
+                    var uriIsValid = await UriIsValidAsync(uri);
 
-                    if (UriIsValid(uri, out title))
+                    if (uriIsValid.IsValid)
                     {
-                        var link = new Link
-                        {
-                            ChatId = update.Message.Chat.Id,
-                            CreateDate = DateTime.Now,
-                            LinkId = Guid.NewGuid(),
-                            Message = update.Message.Text,
-                            Uri = uri,
-                            UserId = update.Message.From.Id
-                        };
-
-                        if (!string.IsNullOrEmpty(title))
-                            link.Title = title.Length > 300 ? title.Substring(0, 300) : title;
-
-                        if (!string.IsNullOrEmpty(update.Message.From.Username))
-                            link.Username = update.Message.From.Username;
-
-                        Context.Link.Add(link);
-                        Context.SaveChanges();
-
                         try
                         {
-                            await _telegramBotClient.SendTextMessageAsync(update.Message.Chat.Id, $"{uri}\n{LinkResources.LinkSaved.GetRandomText()}", ParseMode.Default, true, true, update.Message.MessageId);
+                            var link = new Link
+                            {
+                                ChatId = update.Message.Chat.Id,
+                                CreateDate = DateTime.Now,
+                                LinkId = Guid.NewGuid(),
+                                Message = update.Message.Text,
+                                Uri = uri,
+                                UserId = update.Message.From.Id
+                            };
+
+                            if (!string.IsNullOrEmpty(uriIsValid.UriTitle))
+                                link.Title = uriIsValid.UriTitle.Length > 300 ? uriIsValid.UriTitle.Substring(0, 300) : uriIsValid.UriTitle;
+
+                            if (!string.IsNullOrEmpty(update.Message.From.Username))
+                                link.Username = update.Message.From.Username;
+
+                            Context.Link.Add(link);
+                            await Context.SaveChangesAsync();
+
+                            await _messageBO.SendLinkSavedMessageAsync(update.Message.Chat.Id, uri, uris.Length, update.Message.MessageId);
                         }
                         catch (Exception exception)
                         {
-                            _logger.LogError(exception.Message);
+                            Logger.LogError(exception.Message);
 
                             throw;
                         }
                     }
                     else
                     {
-                        try
-                        {
-                            await _telegramBotClient.SendTextMessageAsync(update.Message.Chat.Id, $"{uri}\n{LinkResources.LinkInvalid.GetRandomText()}", ParseMode.Default, true, true, update.Message.MessageId);
-                        }
-                        catch (Exception exception)
-                        {
-                            _logger.LogError(exception.Message);
-
-                            throw;
-                        }
+                        await _messageBO.SendInvalidLinkMessageAsync(update.Message.Chat.Id, uri, uris.Length, update.Message.MessageId);
                     }
                 }
             }
         }
 
-        public async Task SendLinksRecoverMessageAsync(Update update)
-        {
-            if (update.Type != UpdateType.Message)
-                return;
+        #endregion Public
 
-            if (update.Message.Type == MessageType.Text)
-            {
-                try
-                {
-                    var rootUri = Configuration.GetSection("AppConfiguration")["RootUri"];
-                    var chatId = Uri.EscapeDataString(Encryptor.EncryptString(update.Message.Chat.Id.ToString(), _encryptionKey));
-
-                    await _telegramBotClient.SendTextMessageAsync(update.Message.From.Id,
-                                                                  $"{string.Format(LinkResources.LinksRecover, string.IsNullOrEmpty(update.Message.Chat.Title) ? "" : $" {update.Message.Chat.Title}")} {rootUri}?id={chatId}",
-                                                                  ParseMode.Default, true, true);
-                }
-                catch (ChatNotInitiatedException)
-                {
-                    await _telegramBotClient.SendTextMessageAsync(update.Message.Chat.Id, $"{LinkResources.ChatNotInitiatedException}", ParseMode.Default, true, true, update.Message.MessageId);
-                }
-                catch (ForbiddenException)
-                {
-                    await _telegramBotClient.SendTextMessageAsync(update.Message.Chat.Id, $"{LinkResources.ForbiddenException}", ParseMode.Default, true, true, update.Message.MessageId);
-                }
-                catch (Exception exception)
-                {
-                    _logger.LogError(exception.Message);
-
-                    await _telegramBotClient.SendTextMessageAsync(update.Message.Chat.Id, $"{LinkResources.UnknownException}", ParseMode.Default, true, true, update.Message.MessageId);
-                }
-            }
-        }
+        #region Private
 
         private bool UriExistsInDatabase(string uri, long chatId)
         {
@@ -240,7 +201,7 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects
             }
             catch (Exception exception)
             {
-                _logger.LogError(exception.Message);
+                Logger.LogError(exception.Message);
 
                 throw;
             }
@@ -258,9 +219,7 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects
             {
                 if (update.Message.Entities[i].Type == MessageEntityType.Url)
                 {
-                    Uri uri;
-
-                    if ((Uri.TryCreate(values[i], UriKind.Absolute, out uri) || Uri.TryCreate("http://" + values[i], UriKind.Absolute, out uri)) && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
+                    if ((Uri.TryCreate(values[i], UriKind.Absolute, out Uri uri) || Uri.TryCreate("http://" + values[i], UriKind.Absolute, out uri)) && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
                     {
                         result.Add(uri.AbsoluteUri);
                     }
@@ -270,57 +229,58 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects
             return result.ToArray();
         }
 
-        private bool UriIsValid(string uri, out string uriTitle)
+        private async Task<UriValidResult> UriIsValidAsync(string uri)
         {
+            var result = new UriValidResult { IsValid = false, UriTitle = null };
+
             try
             {
                 using (var wc = new WebClient())
                 {
                     wc.Headers.Add("User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36");
-                    string htmlContent = DownloadStringAwareOfEncoding(wc, new Uri(uri));
+                    string htmlContent = await DownloadStringAwareOfEncodingAsync(wc, new Uri(uri));
 
                     var document = new HtmlDocument();
                     document.LoadHtml(htmlContent);
+                    result.IsValid = true;
 
                     try
                     {
                         var title = document.DocumentNode.Descendants("title").FirstOrDefault();
 
                         if (title != null)
-                            uriTitle = WebUtility.HtmlDecode(title.InnerText).Trim();
-                        else
-                            uriTitle = null;
+                            result.UriTitle = WebUtility.HtmlDecode(title.InnerText).Trim();
                     }
                     catch (Exception)
                     {
-                        uriTitle = null;
+                        result.UriTitle = null;
                     }
 
-                    return true;
+                    return result;
                 }
             }
             catch (Exception)
             {
-                uriTitle = null;
+                result.UriTitle = null;
 
-                return false;
+                return result;
             }
         }
 
-        private string DownloadStringAwareOfEncoding(WebClient webClient, Uri uri)
+        private async Task<string> DownloadStringAwareOfEncodingAsync(WebClient webClient, Uri uri)
         {
             try
             {
                 webClient.Headers.Add("User-Agent: Other");
 
-                var rawData = webClient.DownloadData(uri);
+                var rawData = await webClient.DownloadDataTaskAsync(uri);
                 var encoding = GetEncodingFrom(webClient.ResponseHeaders, Encoding.UTF8);
 
                 return encoding.GetString(rawData);
             }
             catch (Exception exception)
             {
-                _logger.LogError(exception.Message);
+                Logger.LogError(exception.Message);
 
                 throw;
             }
@@ -362,10 +322,14 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects
             }
             catch (Exception exception)
             {
-                _logger.LogError(exception.Message);
+                Logger.LogError(exception.Message);
 
                 return defaultEncoding ?? Encoding.UTF8;
             }
         }
+
+        #endregion Private
+
+        #endregion Methods
     }
 }

@@ -11,15 +11,13 @@ namespace PodProgramar.LnkCapture.Telegram.Webhook.Controllers
     [Route("api/[controller]")]
     public class UpdateController : Controller
     {
-        private readonly IConfiguration _configuration;
         private readonly ILinkBO _linkBO;
-        private readonly string _encryptionKey;
+        private readonly IMessageBO _messageBO;
 
-        public UpdateController(IConfiguration configuration, ILinkBO linkBO)
+        public UpdateController(ILinkBO linkBO, IMessageBO messageBO)
         {
-            _configuration = configuration;
             _linkBO = linkBO;
-            _encryptionKey = _configuration.GetSection("AppConfiguration")["EncryptionKey"];
+            _messageBO = messageBO;
         }
 
         [HttpPost]
@@ -38,9 +36,9 @@ namespace PodProgramar.LnkCapture.Telegram.Webhook.Controllers
                 }
 
                 if (entity != null && entityValue != null && entity.Type == MessageEntityType.BotCommand && validBotCommands.Contains(entityValue))
-                    await _linkBO.SendLinksRecoverMessageAsync(update);
+                    await _messageBO.SendLinksRecoverMessageAsync(update);
                 else
-                    await _linkBO.SaveLinkAsync(update);
+                    await _linkBO.SaveAsync(update);
             }
 
             return Ok();

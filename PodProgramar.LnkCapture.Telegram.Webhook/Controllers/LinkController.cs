@@ -1,7 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
 using PodProgramar.LnkCapture.Data.BusinessObjects;
-using PodProgramar.Utils.Cryptography;
 using System;
 using System.Threading.Tasks;
 
@@ -10,19 +8,17 @@ namespace PodProgramar.LnkCapture.Telegram.Webhook.Controllers
     [Route("api/[controller]")]
     public class LinkController : Controller
     {
-        private readonly IConfiguration _configuration;
         private readonly ILinkBO _linkBO;
-        private readonly string _encryptionKey;
+        private readonly ILinkReaderBO _linkReaderBO;
 
-        public LinkController(IConfiguration configuration, ILinkBO linkBO)
+        public LinkController(ILinkBO linkBO, ILinkReaderBO linkReaderBO)
         {
-            _configuration = configuration;
             _linkBO = linkBO;
-            _encryptionKey = _configuration.GetSection("AppConfiguration")["EncryptionKey"];
+            _linkReaderBO = linkReaderBO;
         }
 
-        [HttpGet]
-        public async Task<IActionResult> Get([FromQuery(Name = "id")] string id,
+        [HttpGet("/api/[controller]/{id}")]
+        public async Task<IActionResult> Get([FromRoute] string id,
                                              [FromQuery(Name = "search")] string search = null,
                                              [FromQuery(Name = "user")]string user = null,
                                              [FromQuery(Name = "startDate")]DateTime? startDate = null,
@@ -30,15 +26,17 @@ namespace PodProgramar.LnkCapture.Telegram.Webhook.Controllers
                                              [FromQuery(Name = "pageIndex")] int? pageIndex = null,
                                              [FromQuery(Name = "pageSize")] int? pageSize = null)
         {
-            var chatId = Encryptor.DecryptString(Uri.EscapeDataString(id) != id ? Uri.UnescapeDataString(id) : id, _encryptionKey);
+            var linkReaderId = Guid.Parse(id);
+            var linkReader = await _linkReaderBO.GetAsync(linkReaderId);
+            var isAPIRequest = Request.Headers.ContainsKey("IsAPIRequest") ? bool.Parse(Request.Headers["IsAPIRequest"]) : false;
 
             object result = null;
 
             if (HttpContext.Request.ContentType != null && HttpContext.Request.ContentType.ToLowerInvariant() == "application/json")
-                result = await _linkBO.GetChatLinksAsync(long.Parse(chatId), search, user, startDate, endDate, pageIndex, pageSize);
+                result = await _linkBO.GetAsync(linkReader, isAPIRequest, search, user, startDate, endDate, pageIndex, pageSize);
             else
             {
-                return RedirectToPage("/Index", new { id });
+                return RedirectToPage($"/Index/{linkReaderId}");
             }
 
             return Ok(result);
