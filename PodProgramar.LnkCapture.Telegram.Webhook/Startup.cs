@@ -39,6 +39,18 @@ namespace PodProgramar.LnkCapture.Telegram.Webhook
                         o.SerializerSettings.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
                     });
 
+            services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAllOrigins",
+                                    builder =>
+                                    {
+                                        builder.AllowAnyHeader();
+                                        builder.AllowAnyMethod();
+                                        builder.AllowAnyOrigin();
+                                        builder.AllowCredentials();
+                                    });
+            });
+
             services.AddSingleton(_ => Configuration);
 
             services.AddDbContext<LnkCaptureContext>(options => options.UseSqlServer(Configuration.GetConnectionString("LnkCaptureDatabase")));
@@ -57,6 +69,8 @@ namespace PodProgramar.LnkCapture.Telegram.Webhook
             {
                 app.UseDeveloperExceptionPage();
             }
+
+            app.UseCors("AllowAllOrigins");
 
             loggerFactory.AddConsole(Configuration.GetSection("Logging"));
             loggerFactory.AddDebug();

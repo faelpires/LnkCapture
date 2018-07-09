@@ -5,6 +5,7 @@ var user;
 var startDate;
 var endDate;
 var preloader;
+var lastChatId;
 
 var app = new Framework7({
     root: '#app',
@@ -130,11 +131,16 @@ var mainView = app.views.create('.view-main', {
 });
 
 app.smartSelect.get(document.getElementById('chatId').element).on('closed', function () {
-    search(0);
+
+    if ($$('#chatId')[0].selectedOptions[0].value != lastChatId)
+        search(0);
 });
 
 function search(pageIndex) {
+
     preloader = app.dialog.preloader();
+
+    lastChatId = $$('#chatId')[0].selectedOptions[0].value;
 
     var data = {
         search: searchTerm,

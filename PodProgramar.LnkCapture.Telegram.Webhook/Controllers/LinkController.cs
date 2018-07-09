@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Cors;
+using Microsoft.AspNetCore.Mvc;
 using PodProgramar.LnkCapture.Data.BusinessObjects;
 using System;
 using System.Threading.Tasks;
@@ -18,6 +19,7 @@ namespace PodProgramar.LnkCapture.Telegram.Webhook.Controllers
         }
 
         [HttpGet("/api/[controller]/{id}")]
+        [EnableCors("AllowAllOrigins")]
         public async Task<IActionResult> Get([FromRoute] string id,
                                              [FromQuery(Name = "search")] string search = null,
                                              [FromQuery(Name = "user")]string user = null,
@@ -28,18 +30,19 @@ namespace PodProgramar.LnkCapture.Telegram.Webhook.Controllers
         {
             var linkReaderId = Guid.Parse(id);
             var linkReader = await _linkReaderBO.GetAsync(linkReaderId);
-            var isAPIRequest = Request.Headers.ContainsKey("IsAPIRequest") ? bool.Parse(Request.Headers["IsAPIRequest"]) : false;
+            var isAPIRequest = Request.Headers.ContainsKey("IsAPIRequest") ? bool.Parse(Request.Headers["IsAPIRequest"]) : true;
 
             object result = null;
 
-            if (HttpContext.Request.ContentType != null && HttpContext.Request.ContentType.ToLowerInvariant() == "application/json")
+            if (HttpContext.Request.ContentType != null && HttpContext.Request.ContentType.ToLowerInvariant().StartsWith("application/json"))
+            {
                 result = await _linkBO.GetAsync(linkReader, isAPIRequest, search, user, startDate, endDate, pageIndex, pageSize);
+                return Ok(result);
+            }
             else
             {
                 return RedirectToPage($"/Index/{linkReaderId}");
             }
-
-            return Ok(result);
         }
     }
 }

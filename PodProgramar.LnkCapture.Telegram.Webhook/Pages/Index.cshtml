@@ -38,9 +38,9 @@
     <link rel="stylesheet" href="~/css/app.css">
 </head>
 <body>
-    <div id="app">
+    <div id="app" class="color-theme-orange theme-dark">
         <div class="statusbar"></div>
-        <div class="view view-main ios-edges color-theme-orange theme-dark">
+        <div class="view view-main ios-edges">
             <div class="page" data-name="home">
                 <div class="navbar">
                     <div class="navbar-inner">
@@ -58,7 +58,7 @@
                     <div class="list">
                         <ul>
                             <li>
-                                <a href="#" class="item-link smart-select smart-select-init">
+                                <a href="#" class="item-link smart-select smart-select-init" data-open-in="sheet">
                                     <select name="chatId" id="chatId">
                                         @foreach (var chat in Model.Chats)
                                         {

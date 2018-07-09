@@ -63,11 +63,19 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects
                 if (!pageSize.HasValue)
                     pageSize = 10;
 
+                if (!startDate.HasValue)
+                    startDate = DateTime.Now.AddMonths(-1);
+
+                if (!endDate.HasValue)
+                    endDate = DateTime.Now.AddDays(1).AddMilliseconds(-1);
+                else
+                    endDate = endDate.Value.AddDays(1).AddMilliseconds(-1);
+
                 var searchQuery = Context.Link.Where(p => p.ChatId == linkReader.ChatId
                                                         && (string.IsNullOrEmpty(search) || p.Message.Contains(search))
                                                         && (string.IsNullOrEmpty(user) || p.Username.Contains(user))
-                                                        && (!startDate.HasValue || p.CreateDate >= startDate.Value)
-                                                        && (!endDate.HasValue || p.CreateDate <= endDate.Value.AddDays(1).AddMilliseconds(-1))
+                                                        && (p.CreateDate >= startDate.Value)
+                                                        && (p.CreateDate <= endDate.Value)
                                                     ).OrderByDescending(p => p.CreateDate);
 
                 var totalItems = await Context.Link.Where(p => p.ChatId == linkReader.ChatId).CountAsync();
