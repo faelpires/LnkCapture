@@ -10,6 +10,8 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects
     {
         Task SaveAsync(Update update);
 
+        void UpdateAsync();
+        
         Task<LinkResultDTO> GetAsync(LinkReader linkReader, bool isAPIRequest, string search, string user, DateTime? startDate, DateTime? endDate, int? pageIndex, int? pageSize);
     }
 }

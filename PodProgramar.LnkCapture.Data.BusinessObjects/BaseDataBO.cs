@@ -8,9 +8,9 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects
     {
         public LnkCaptureContext Context { get; }
 
-        public BaseDataBO(LnkCaptureContext lnkCaptureContext, IConfiguration configuration, ILogger logger) : base(configuration, logger)
+        public BaseDataBO(LnkCaptureContext lnkCaptureContext, IConfiguration configuration, ILogger<BaseDataBO> logger) : base(configuration, logger)
         {
-            this.Context = lnkCaptureContext;
+            Context = lnkCaptureContext;
         }
     }
 }

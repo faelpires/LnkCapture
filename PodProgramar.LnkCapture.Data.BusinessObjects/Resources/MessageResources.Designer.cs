@@ -61,20 +61,76 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 😵 Eu vou te enviar este link na chat privado, porém antes preciso que você incie uma conversa comigo. Faz assim, clique neste nome @LnkCapture e depois no botão &quot;start&quot; ou &quot;começar&quot;, depois volte aqui e solicite o link novamente..
+        ///   Looks up a localized string similar to ⛔ Somente administradores do grupo podem definir as configurações..
         /// </summary>
-        internal static string ChatNotInitiatedException {
+        internal static string BotOptionNotAllowed {
             get {
-                return ResourceManager.GetString("ChatNotInitiatedException", resourceCulture);
+                return ResourceManager.GetString("BotOptionNotAllowed", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 😢 Não consigo te enviar uma mensagem em particular com o link. Acho que você me bloqueou..
+        ///   Looks up a localized string similar to 😔 Não consegui salvar a configuração neste momento. Por favor, tente novamente em alguns instantes..
         /// </summary>
-        internal static string ForbiddenException {
+        internal static string BotOptionNotSet {
             get {
-                return ResourceManager.GetString("ForbiddenException", resourceCulture);
+                return ResourceManager.GetString("BotOptionNotSet", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Para ter acesso ao gerenciador de links é preciso solicitar o endereço de acesso. Esta solicitação é feita diretamente no grupo através do comando /linksUrl@LnkCaptureBot. Uma vez que você executar este comando eu vou te enviar aqui no chat privado o endereço de acesso. 
+        ///
+        ///Eu preciso te enviar de forma privada para que outras pessoas não vejam este link, ele é seu passaporte para o gerenciador de links. Não será solicitado usuário ou senha, o endereço é tudo que você precisa. 
+        ///
+        ///Um endereço diferente é ge [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string Help {
+            get {
+                return ResourceManager.GetString("Help", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 👥 Comandos para o Administrador do grupo
+        ///
+        ///`/disableSavedMsg` - Desativa confirmação de salvamento
+        ///`/disableLinkAlreadyExistsMsg` - Desativa mensagens de link existente
+        ///`/disableInvalidLinkMsg` - Desativa mensagens de link inválido
+        ///`/enableSavedMsg` - Ativa confirmação de salvamento
+        ///`/enableLinkAlreadyExistsMsg` - Ativa mensagens de link existente
+        ///`/enableInvalidLinkMsg` - Ativa mensagens de link inválido.
+        /// </summary>
+        internal static string HelpAdmin {
+            get {
+                return ResourceManager.GetString("HelpAdmin", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Eu enviei a mensagem de ajuda em uma mensagem privada..
+        /// </summary>
+        internal static string HelpToChat {
+            get {
+                return ResourceManager.GetString("HelpToChat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Tudo bem! Não vou informar que o link é inválido..
+        /// </summary>
+        internal static string InvalidLinkMessageDisabled {
+            get {
+                return ResourceManager.GetString("InvalidLinkMessageDisabled", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Tudo bem! Vou informar que o link é inválido..
+        /// </summary>
+        internal static string InvalidLinkMessageEnabled {
+            get {
+                return ResourceManager.GetString("InvalidLinkMessageEnabled", resourceCulture);
             }
         }
         
@@ -87,6 +143,24 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects.Resources {
         internal static string LinkAlreadyExists {
             get {
                 return ResourceManager.GetString("LinkAlreadyExists", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Certo! Não vou avisar que o link já existe. Mesmo assim não vou salvar duplicado..
+        /// </summary>
+        internal static string LinkAlreadyExistsMessageDisabled {
+            get {
+                return ResourceManager.GetString("LinkAlreadyExistsMessageDisabled", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Certo! Vou avisar que o link já existe..
+        /// </summary>
+        internal static string LinkAlreadyExistsMessageEnabled {
+            get {
+                return ResourceManager.GetString("LinkAlreadyExistsMessageEnabled", resourceCulture);
             }
         }
         
@@ -121,7 +195,7 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 👉 Com este endereço você consegue recuperar os links salvos no chat{0}:.
+        ///   Looks up a localized string similar to 👉 Com este endereço você consegue recuperar os links salvos no chat{0}: {1}. Guarde este link somente para você, ele é seu passe livre para acesso aos links. Para cada grupo que você participa é necessário gerar um link de acesso, porém, depois de gerado você pode usar qualquer um deles para ver os links de qualquer chat..
         /// </summary>
         internal static string LinksRecover {
             get {
@@ -130,11 +204,67 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 😓 Alguma coisa deu errado aqui! Não consigo executar o que você me pediu. Tenta de novo mais tarde por favor..
+        ///   Looks up a localized string similar to ⭐️ Avaliar.
         /// </summary>
-        internal static string UnknownException {
+        internal static string RateBot {
             get {
-                return ResourceManager.GetString("UnknownException", resourceCulture);
+                return ResourceManager.GetString("RateBot", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Ok! Não vou enviar novamente mensagens confirmando o salvamento do link..
+        /// </summary>
+        internal static string SavedMessagesDisabled {
+            get {
+                return ResourceManager.GetString("SavedMessagesDisabled", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Ok! Vou enviar mensagens confirmando o salvamento do link..
+        /// </summary>
+        internal static string SavedMessagesEnabled {
+            get {
+                return ResourceManager.GetString("SavedMessagesEnabled", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Olá! Pessoal do grupo {0}, eu sou o LnkCapture e estou aqui para organizar os links que forem postados por aqui. Podem ir mandando os seus links que estarei guardando todos, menos os duplicados 😜.
+        ///
+        ///A qualquer momento será possível recuperar os links, basta me enviar o comando /linksurl..
+        /// </summary>
+        internal static string Start {
+            get {
+                return ResourceManager.GetString("Start", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 🤖 Iniciar conversa.
+        /// </summary>
+        internal static string StartChat {
+            get {
+                return ResourceManager.GetString("StartChat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 👥 Adicionar em um grupo.
+        /// </summary>
+        internal static string StartGroup {
+            get {
+                return ResourceManager.GetString("StartGroup", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Olá! Eu sou o LnkCapture. Meu objetivo é salvar todos os links que forem postados nos grupos que você me adicionar. Depois será possível consultar a qualquer momento os links salvos. Clique no botão &quot;Adicionar em um grupo&quot;..
+        /// </summary>
+        internal static string StartPrivate {
+            get {
+                return ResourceManager.GetString("StartPrivate", resourceCulture);
             }
         }
     }

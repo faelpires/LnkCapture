@@ -4,7 +4,6 @@ var searchTerm;
 var user;
 var startDate;
 var endDate;
-var preloader;
 var lastChatId;
 
 var app = new Framework7({
@@ -17,8 +16,6 @@ var app = new Framework7({
     },
     on: {
         pageInit: function (page) {
-
-
             startDate = $$('#DefaultStartDate').val();
             endDate = $$('#DefaultEndDate').val();
 
@@ -47,7 +44,7 @@ var app = new Framework7({
                                 <span class="ios-only">Back</span>\
                               </a>\
                             </div>\
-                            <div class="title">Filters</div>\
+                            <div class="title">Pesquisar</div>\
                           </div>\
                         </div>\
                         <div class="fab fab-right-bottom">\
@@ -61,14 +58,14 @@ var app = new Framework7({
                               <ul>\
                                 <li class="item-content item-input">\
                                   <div class="item-inner">\
-                                    <div class="item-title item-label">Search</div>\
+                                    <div class="item-title item-label">Pesquisa</div>\
                                     <div class="item-input-wrap">\
                                       <input type="text" id="search" name="search">\
                                   </div>\
                                 </li>\
                                 <li class="item-content item-input">\
                                   <div class="item-inner">\
-                                    <div class="item-title item-label">User</div>\
+                                    <div class="item-title item-label">Usuário</div>\
                                     <div class="item-input-wrap">\
                                       <input type="text" id="user" name="user">\
                                     </div>\
@@ -76,7 +73,7 @@ var app = new Framework7({
                                 </li>\
                                 <li class="item-content item-input item-input-with-value">\
                                   <div class="item-inner">\
-                                  <div class="item-title item-label">Start Date</div>\
+                                  <div class="item-title item-label">Data inicial</div>\
                                     <div class="item-input-wrap">\
                                       <input id="startDate" name="startDate" type="date" value="' + $$('#DefaultStartDate').val() + '" placeholder="Please choose..." class="input-with-value">\
                                     </div>\
@@ -84,7 +81,7 @@ var app = new Framework7({
                                 </li>\
                                 <li class="item-content item-input item-input-with-value">\
                                   <div class="item-inner">\
-                                  <div class="item-title item-label">End Date</div>\
+                                  <div class="item-title item-label">Data final</div>\
                                     <div class="item-input-wrap">\
                                       <input id="endDate" name="endDate" type="date" value="' + $$('#DefaultEndDate').val() + '" placeholder="Please choose..." class="input-with-value">\
                                     </div>\
@@ -97,7 +94,6 @@ var app = new Framework7({
                     ',
             on: {
                 pageBeforeIn: function (event, page) {
-
                     $$('#search').val(searchTerm);
                     $$('#user').val(user);
                     $$('#startDate').val(startDate);
@@ -112,6 +108,7 @@ var app = new Framework7({
                         pageSize = pageSize;
 
                         search(0);
+
                         app.router.back();
                     });
                 },
@@ -131,14 +128,17 @@ var mainView = app.views.create('.view-main', {
 });
 
 app.smartSelect.get(document.getElementById('chatId').element).on('closed', function () {
-
-    if ($$('#chatId')[0].selectedOptions[0].value != lastChatId)
+    if ($$('#chatId')[0].selectedOptions[0].value != lastChatId) {
         search(0);
+    }
 });
 
-function search(pageIndex) {
+app.smartSelect.get(document.getElementById('chatId').element).params.sheetCloseLinkText = "APLICAR";
 
-    preloader = app.dialog.preloader();
+function search(pageIndex) {
+    $$('.page-content').scrollTop(0, 500);
+
+    app.preloader.show('orange');
 
     lastChatId = $$('#chatId')[0].selectedOptions[0].value;
 
@@ -149,7 +149,7 @@ function search(pageIndex) {
         endDate: endDate,
         pageIndex: pageIndex,
         pageSize: pageSize
-    }
+    };
 
     app.request({
         url: "/api/link/" + $$('#chatId')[0].selectedOptions[0].value,
@@ -167,52 +167,44 @@ function search(pageIndex) {
             }
         },
         complete: function (data) {
-            preloader.close();
+            app.preloader.hide();
         },
         success: function (response) {
-            $$('#tblinks tbody').empty();
+            $$('#cards').empty();
             $$('.data-table-footer').empty();
 
             for (var i = 0; i < response.items.length; i++) {
-                var tr = $$('<tr>')
-                var tdTitle = $$('<td style="white-space: nowrap">');
-                var aTitle = $$('<a class="link external" target="_blank" href=' + response.items[i].uri + '>');
-                var tdUser = $$('<td>');
-                var tdCreate = $$('<td>');
+                var monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+
+                var thumbnailUri = response.items[i].thumbnailUri ? response.items[i].thumbnailUri : '/content/images/nothumbnail.jpg';
+                var title = response.items[i].title ? (response.items[i].title.length < 140 ? response.items[i].title : response.items[i].title.substring(0, 137) + '...') : (response.items[i].uri.length < 250 ? response.items[i].uri : response.items[i].uri.substring(0, 247) + '...');
+                var username = response.items[i].firstName ? response.items[i].firstName + (response.items[i].lastName ? ' ' + response.items[i].lastName : '') : (response.items[i].username ? response.items[i].username : response.items[i].userId);
                 var createDate = new Date(response.items[i].createDate);
+                var createDateFormatted = createDate.getDate() + ' de ' + monthNames[createDate.getMonth()] + ' de ' + createDate.getFullYear() + ' por ' + username;
+                var description = response.items[i].description != null ? (response.items[i].description.length < 200 ? response.items[i].description : response.items[i].description.substring(0, 197) + '...') : null;
 
-                if (response.items[i].title != undefined) {
-                    if (response.items[i].title.length < 55)
-                        aTitle.text(response.items[i].title);
-                    else
-                        aTitle.text(response.items[i].title.substring(0, 52) + '...');
-                } else {
-                    if (response.items[i].uri.length < 55)
-                        aTitle.text(response.items[i].uri);
-                    else
-                        aTitle.text(response.items[i].uri.substring(0, 52) + '...');
-                }
+                var cardElement = $$('<div class="card demo-card-header-pic">');
+                var headerElement = $$('<div valign="bottom" class="card-header"><div class="card-background" style="background: url(/content/images/nothumbnail.jpg)"></div>' + (response.items[i].thumbnailUri ? '<div class="card-background" style="background-color: #ffffff !important; background: url(\'' + thumbnailUri + '\')"></div>' : '') + '<div class="card-background card-background-transparency"></div>' + title + '</div>');
+                var cardContentElement = $$('<div class="card-content card-content-padding">');
+                var dateElement = $$('<p class="date">' + createDateFormatted + '</p>');
+                var descriptionElement = $$('<p class="">' + description + '</p>');
+                var cardFooterElement = $$('<div class="card-footer"><a href="' + response.items[i].uri + '" class="link external" target="_blank">Abrir</a>'); //<a href="#" class="link">Read more</a></div>
 
-                if (response.items[i].username != undefined) {
-                    tdUser.text(response.items[i].username);
-                } else if (response.items[i].userId != undefined)
-                    tdUser.text(response.items[i].userId);
-                else
-                    tdUser.text('-');
+                cardElement.append(headerElement);
+                cardElement.append(cardContentElement);
+                cardContentElement.append(dateElement);
 
-                tdCreate.text(formatDate(createDate));
+                if (description != null)
+                    cardContentElement.append(descriptionElement);
 
-                tdTitle.append(aTitle);
-                tr.append(tdTitle);
-                tr.append(tdUser);
-                tr.append(tdCreate);
+                cardElement.append(cardFooterElement);
 
-                $$('#tblinks tbody').append(tr);
+                $$('#cards').append(cardElement);
             }
 
             var lastPage = Math.ceil(response.totalSearchItems / pageSize);
             var paginationSelect = $$('<div class="data-table-rows-select">\
-                                            Per page:\
+                                            Itens:\
                                             <div class="input input-dropdown">\
                                                 <select>\
                                                     <option value="10" ' + (pageSize == 10 ? 'selected' : '') + '>10</option>\
@@ -225,11 +217,12 @@ function search(pageIndex) {
 
             $$(paginationSelect).find('select').on('change', function () {
                 pageSize = $$('.data-table-rows-select select').val();
+
                 search(0);
             });
 
             var pagination = $$('<div class="data-table-pagination"></div>');
-            var paginationLabel = $$('<span class="data-table-pagination-label"> ' + ((pageIndex * pageSize) + 1) + ' - ' + (((pageIndex * pageSize)) + response.items.length) + ' of ' + response.totalSearchItems + '</span>');
+            var paginationLabel = $$('<span class="data-table-pagination-label"> ' + ((pageIndex * pageSize) + 1) + ' - ' + (((pageIndex * pageSize)) + response.items.length) + ' de ' + response.totalSearchItems + '</span>');
             var paginationPrevious = $$('<a href="#" class="link ' + (pageIndex == 0 ? 'disabled' : '') + '">\
                                             <i class="icon icon-prev color-gray"></i>\
                                         </a>');

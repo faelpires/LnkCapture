@@ -8,10 +8,10 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects
         public IConfiguration Configuration { get; }
         public ILogger Logger { get; set; }
 
-        public BaseBO(IConfiguration configuration, ILogger logger)
+        public BaseBO(IConfiguration configuration, ILogger<IBO> logger)
         {
-            this.Configuration = configuration;
-            this.Logger = logger;
+            Configuration = configuration;
+            Logger = logger;
         }
     }
 }

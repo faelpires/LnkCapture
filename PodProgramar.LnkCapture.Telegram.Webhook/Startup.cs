@@ -1,21 +1,20 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.AzureAppServices;
 using PodProgramar.LnkCapture.Data.BusinessObjects;
 using PodProgramar.LnkCapture.Data.DAL;
-using System.IO;
+using System.Globalization;
 
 namespace PodProgramar.LnkCapture.Telegram.Webhook
 {
     public class Startup
     {
-        private IHostingEnvironment _hostingEnvironment;
+        private readonly IHostingEnvironment _hostingEnvironment;
 
         public Startup(IConfiguration configuration, IHostingEnvironment hostingEnvironment)
         {
@@ -55,11 +54,15 @@ namespace PodProgramar.LnkCapture.Telegram.Webhook
 
             services.AddDbContext<LnkCaptureContext>(options => options.UseSqlServer(Configuration.GetConnectionString("LnkCaptureDatabase")));
 
+            services.AddTransient<IConfigBO, ConfigBO>();
+            services.AddTransient<IBotCommandsBO, BotCommandBO>();
             services.AddTransient<IChatBO, ChatBO>();
             services.AddTransient<IMessageBO, MessageBO>();
             services.AddTransient<ILinkReaderLogBO, LinkReaderLogBO>();
             services.AddTransient<ILinkReaderBO, LinkReaderBO>();
             services.AddTransient<ILinkBO, LinkBO>();
+            services.AddTransient<ICrawlerBO, CrawlerBO>();
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -84,6 +87,19 @@ namespace PodProgramar.LnkCapture.Telegram.Webhook
             app.UseStaticFiles(new StaticFileOptions
             {
                 ServeUnknownFileTypes = true
+            });
+
+            var supportedCultures = new[]
+            {
+                new CultureInfo("en"),
+                new CultureInfo("pt-BR")
+            };
+
+            app.UseRequestLocalization(new RequestLocalizationOptions
+            {
+                DefaultRequestCulture = new RequestCulture("en"),
+                SupportedCultures = supportedCultures,
+                SupportedUICultures = supportedCultures
             });
         }
     }

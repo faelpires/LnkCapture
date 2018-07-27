@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 using PodProgramar.LnkCapture.Data.Models;
 
 namespace PodProgramar.LnkCapture.Data.DAL
@@ -10,12 +12,42 @@ namespace PodProgramar.LnkCapture.Data.DAL
         {
         }
 
+        public virtual DbSet<Config> Config { get; set; }
+        public virtual DbSet<CultureInfo> CultureInfo { get; set; }
         public virtual DbSet<Link> Link { get; set; }
         public virtual DbSet<LinkReader> LinkReader { get; set; }
         public virtual DbSet<LinkReaderLog> LinkReaderLog { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<Config>(entity =>
+            {
+                entity.Property(e => e.ConfigId).HasDefaultValueSql("(newid())");
+
+                entity.HasOne(d => d.Culture)
+                    .WithMany(p => p.Config)
+                    .HasForeignKey(d => d.CultureId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Config_CultureInfo");
+            });
+
+            modelBuilder.Entity<CultureInfo>(entity =>
+            {
+                entity.HasKey(e => e.CultureId);
+
+                entity.Property(e => e.CultureId).HasDefaultValueSql("(newid())");
+
+                entity.Property(e => e.Culture)
+                    .IsRequired()
+                    .HasMaxLength(10)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.DisplayName)
+                    .IsRequired()
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+            });
+
             modelBuilder.Entity<Link>(entity =>
             {
                 entity.Property(e => e.LinkId).HasDefaultValueSql("(newid())");
@@ -24,8 +56,18 @@ namespace PodProgramar.LnkCapture.Data.DAL
                     .HasColumnType("datetime")
                     .HasDefaultValueSql("(getdate())");
 
+                entity.Property(e => e.Description)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Keywords)
+                    .IsUnicode(false);
+
                 entity.Property(e => e.Message)
                     .IsRequired()
+                    .IsUnicode(false);
+
+                entity.Property(e => e.ThumbnailUri)
+                    .HasMaxLength(2048)
                     .IsUnicode(false);
 
                 entity.Property(e => e.Title)

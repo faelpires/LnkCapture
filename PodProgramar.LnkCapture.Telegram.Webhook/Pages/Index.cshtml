@@ -1,8 +1,6 @@
 ﻿@page
 @model PodProgramar.LnkCapture.Telegram.Webhook.Pages.IndexModel
-@{
-    ViewData["Title"] = "Index";
-}
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -60,7 +58,7 @@
                             <li>
                                 <a href="#" class="item-link smart-select smart-select-init" data-open-in="sheet">
                                     <select name="chatId" id="chatId">
-                                        @foreach (var chat in Model.Chats)
+                                        @foreach (var chat in Model.Chats.OrderBy(p => p.Value))
                                         {
                                             <option value="@chat.Key" @(chat.Key == Model.ChatId ? "selected" : "" )>@chat.Value</option>
                                         }
@@ -76,23 +74,9 @@
                         </ul>
                     </div>
 
+                    <div id="cards"></div>
+
                     <div class="card data-table">
-                        <table id="tblinks">
-                            <thead>
-                                <tr>
-                                    <th class="label-cell">Link</th>
-                                    <th class="label-cell">User</th>
-                                    <th class="label-cell">Creation</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td colspan="3">
-                                        <div class="progressbar-infinite"></div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
                         <div class="data-table-footer text-color-white"></div>
                     </div>
                 </div>
@@ -100,6 +84,7 @@
         </div>
     </div>
     <script type="text/javascript" src="~/lib/framework7/framework7.min.js"></script>
-    <script type="text/javascript" src="~/lib/site/lnkcature.min.js"></script>
+    @*<script type="text/javascript" src="~/lib/site/lnkcature.min.js"></script>*@
+    <script type="text/javascript" src="~/js/Index.js"></script>
 </body>
 </html>

@@ -39,15 +39,21 @@ namespace PodProgramar.LnkCapture.Telegram.Webhook.Pages
 
         public async Task<IActionResult> OnGetAsync(Guid id)
         {
-            var linkReader = await _linkReaderBO.GetAsync(id);
-            var chat = await _chatBO.GetChatAsync(linkReader.ChatId);
+            try
+            {
+                var linkReader = await _linkReaderBO.GetAsync(id);
 
-            ChatId = id;
-            Chats = await _linkReaderBO.GetRelatedLinkReadersAsync(linkReader.LinkReaderId);
-            DefaultStartDate = DateTime.Now.AddMonths(-1);
-            DefaultEndDate = DateTime.Now;
+                ChatId = id;
+                Chats = await _linkReaderBO.GetRelatedLinkReadersAsync(linkReader.LinkReaderId);
+                DefaultStartDate = DateTime.Now.AddMonths(-1);
+                DefaultEndDate = DateTime.Now;
 
-            return Page();
+                return Page();
+            }
+            catch (Exception)
+            {
+                return RedirectToPage("Error");
+            }
         }
     }
 }

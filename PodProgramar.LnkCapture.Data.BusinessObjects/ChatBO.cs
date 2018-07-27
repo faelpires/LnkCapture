@@ -1,9 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using PodProgramar.LnkCapture.Data.BusinessObjects.Resources;
+using System;
+using System.Threading.Tasks;
+using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types;
 
 namespace PodProgramar.LnkCapture.Data.BusinessObjects
@@ -19,13 +19,36 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects
         {
             try
             {
-                return await BotClient.GetChatAsync(chatId);
+                var chat = await BotClient.GetChatAsync(chatId);
+
+                if (string.IsNullOrEmpty(chat.Title))
+                    chat.Title = ChatResources.DefaultChatName;
+
+                return chat;
+            }
+            catch (ChatNotFoundException)
+            {
+                return new Chat() { Id = chatId, Title = ChatResources.ChatNotFoundTitle };
             }
             catch (Exception exception)
             {
                 Logger.LogError(exception.Message);
 
-                throw;
+                return new Chat() { Id = chatId, Title = ChatResources.ChatUnknown };
+            }
+        }
+
+        public async Task<ChatMember> GetChatMemberAsync(long chatId, int userId)
+        {
+            try
+            {
+                var chatMember = await BotClient.GetChatMemberAsync(chatId, userId);
+
+                return chatMember;
+            }
+            catch (Exception)
+            {
+                return null;
             }
         }
     }

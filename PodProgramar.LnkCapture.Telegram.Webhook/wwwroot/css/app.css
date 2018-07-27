@@ -1,7 +1,42 @@
-﻿.card.data-table {
+﻿.list {
+    margin-top: 0px !important;
+}
+
+.card.data-table {
     margin-bottom: 90px !important
 }
 
     .card.data-table th {
         min-width: 160px;
     }
+
+.demo-card-header-pic .card-header {
+    word-break: break-word;
+    height: 40vw;
+    color: #fff;
+    position: relative;
+    text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;
+}
+
+    .demo-card-header-pic .card-header .card-background {
+        background-size: cover !important;
+        background-position: center !important;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+        position: absolute;
+        z-index: -1;
+        height: 40vw;
+        border-radius: 4px 4px 0px 0px;
+    }
+
+    .demo-card-header-pic .card-header .card-background-transparency {
+        opacity: 0.2;
+        background-color: #000000;
+    }
+
+.demo-card-header-pic .card-content-padding .date {
+    font-size: 12px;
+    color: #8e8e93;
+}

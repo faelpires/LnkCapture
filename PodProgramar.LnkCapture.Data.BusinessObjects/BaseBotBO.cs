@@ -9,7 +9,7 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects
     {
         public TelegramBotClient BotClient { get; }
 
-        public BaseBotBO(IConfiguration configuration, ILogger logger) : base(configuration, logger)
+        public BaseBotBO(IConfiguration configuration, ILogger<BaseBotBO> logger) : base(configuration, logger)
         {
             var botConfiguration = Configuration.GetSection("BotConfiguration");
 

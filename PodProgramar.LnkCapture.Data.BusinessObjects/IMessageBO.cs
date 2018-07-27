@@ -5,12 +5,24 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects
 {
     public interface IMessageBO
     {
-        Task SendLinksRecoverMessageAsync(Update update);
+        Task SendWelcomeMessageAsync(bool isPrivateChat, long chatId);
 
-        Task<Message> SendLinkAlreadyExistsMessageAsync(long chatId, string uri, int uriCount, int replyToMessageId);
+        Task SendHelpMessageAsync(bool isPrivateChat, long chatId, int replyToMessageId, int userId);
 
-        Task<Message> SendLinkSavedMessageAsync(long chatId, string uri, int uriCount, int replyToMessageId);
+        Task SendLinksRecoverMessageAsync(long chatId, int userId, string chatTitle, int replyToMessageId);
 
-        Task<Message> SendInvalidLinkMessageAsync(long chatId, string uri, int uriCount, int replyToMessageId);
+        Task SendBotOptionsMessageAsync(Update update);
+
+        Task SendLinkAlreadyExistsMessageAsync(long chatId, string uri, int uriCount, int replyToMessageId);
+
+        Task SendLinkSavedMessageAsync(long chatId, string uri, int uriCount, int replyToMessageId);
+
+        Task SendInvalidLinkMessageAsync(long chatId, string uri, int uriCount, int replyToMessageId);
+
+        Task SendBotOptionSetMessageAsync(long chatId, int replyToMessageId, BotCommand botCommand);
+
+        Task SendBotOptionNotSetMessageAsync(long chatId, int replyToMessageId);
+
+        Task SendBotOptionNotAllowedMessageAsync(long chatId, int replyToMessageId);
     }
 }

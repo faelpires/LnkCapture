@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MihaZupan;
+using PodProgramar.LnkCapture.Data.BusinessObjects.Resources;
 using PodProgramar.LnkCapture.Data.DAL;
 using PodProgramar.LnkCapture.Data.Models;
 using System;
@@ -114,16 +115,16 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects
                                             .Select(p => new { p.LinkReaderId, p.ChatId })
                                             .ToListAsync();
 
-                    foreach (var item in linkReaderList)
+                    await Task.WhenAll(linkReaderList.Select(async p =>
                     {
-                        var chat = await _chatBO.GetChatAsync(item.ChatId);
-                        result.Add(item.LinkReaderId, chat.Title != null ? chat.Title : "LnkCapture");
-                    }
+                        var chat = await _chatBO.GetChatAsync(p.ChatId);
+                        result.Add(p.LinkReaderId, chat.Title);
+                    }).ToArray());
 
                     return result;
                 }
                 else
-                    throw new Exception("Invalid Id");
+                    throw new Exception(ExceptionResources.InvalidId);
             }
             catch (Exception exception)
             {

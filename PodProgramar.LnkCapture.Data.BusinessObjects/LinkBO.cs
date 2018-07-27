@@ -1,5 +1,4 @@
-﻿using HtmlAgilityPack;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using PodProgramar.LnkCapture.Data.DAL;
@@ -7,10 +6,7 @@ using PodProgramar.LnkCapture.Data.DTO;
 using PodProgramar.LnkCapture.Data.Models;
 using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Linq;
-using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -21,20 +17,24 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects
     {
         #region Fields
 
+        private readonly IConfigBO _configBO;
         private readonly IMessageBO _messageBO;
         private readonly IChatBO _chatBO;
         private readonly ILinkReaderLogBO _linkReaderLogBO;
+        private readonly ICrawlerBO _crawlerBO;
 
         #endregion Fields
 
         #region Constructors
 
-        public LinkBO(IConfiguration configuration, LnkCaptureContext lnkCaptureContext, ILogger<LinkBO> logger, IMessageBO messageBO, IChatBO chatBO, ILinkReaderLogBO linkReaderLogBO) : base(lnkCaptureContext, configuration, logger)
+        public LinkBO(IConfiguration configuration, LnkCaptureContext lnkCaptureContext, ILogger<LinkBO> logger, IMessageBO messageBO, IChatBO chatBO, ILinkReaderLogBO linkReaderLogBO, IConfigBO configBO, ICrawlerBO crawlerBO) : base(lnkCaptureContext, configuration, logger)
         {
             Logger = logger;
+            _configBO = configBO;
             _messageBO = messageBO;
             _chatBO = chatBO;
             _linkReaderLogBO = linkReaderLogBO;
+            _crawlerBO = crawlerBO;
         }
 
         #endregion Constructors
@@ -84,29 +84,58 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects
 
                 var chat = await _chatBO.GetChatAsync(linkReader.ChatId);
 
-                var linkResultDTO = new LinkResultDTO
-                {
+                var linkResultDTO = new LinkResultDTO {
                     ChatId = linkReader.ChatId,
-                    ChatTitle = chat?.Title,
+                    ChatTitle = chat.Title,
                     CreateDate = DateTime.Now,
                     TotalItems = totalItems,
                     TotalSearchItems = totalSearchItems,
                     Items = new List<LinkDTO>()
                 };
 
+                var userDataList = new List<Tuple<int, string, string>>();
+
                 foreach (var link in searchItems)
                 {
-                    var linkDTO = new LinkDTO
-                    {
+                    var linkDTO = new LinkDTO {
                         Title = link.Title,
                         CreateDate = link.CreateDate,
-                        Uri = link.Uri
+                        Uri = link.Uri,
+                        Description = link.Description,
+                        Keywords = link.Keywords,
+                        ThumbnailUri = link.ThumbnailUri,
+                        UserId = link.UserId
                     };
 
                     if (!string.IsNullOrEmpty(link.Username))
-                        linkDTO.Username = $"@{link.Username}";
+                        linkDTO.Username = link.Username;
+
+                    var linkUserData = userDataList.FirstOrDefault(p => p.Item1 == link.UserId);
+
+                    if (linkUserData != null)
+                    {
+                        if (!string.IsNullOrWhiteSpace(linkUserData.Item2))
+                            linkDTO.FirstName = linkUserData.Item2;
+
+                        if (!string.IsNullOrWhiteSpace(linkUserData.Item3))
+                            linkDTO.LastName = linkUserData.Item3;
+                    }
                     else
-                        linkDTO.UserId = link.UserId;
+                    {
+                        var chatMember = await _chatBO.GetChatMemberAsync(linkReader.ChatId, link.UserId);
+
+                        if (chatMember != null && chatMember.User != null)
+                        {
+                            if (!string.IsNullOrWhiteSpace(chatMember.User.FirstName))
+                                linkDTO.FirstName = chatMember.User.FirstName;
+
+                            if (!string.IsNullOrWhiteSpace(chatMember.User.LastName))
+                                linkDTO.LastName = chatMember.User.LastName;
+
+                            var userData = new Tuple<int, string, string>(link.UserId, linkDTO.FirstName, linkDTO.LastName);
+                            userDataList.Add(userData);
+                        }
+                    }
 
                     linkResultDTO.Items.Add(linkDTO);
                 }
@@ -125,10 +154,19 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects
 
         public async Task SaveAsync(Update update)
         {
+            if (update == null)
+                return;
+
             if (update.Type != UpdateType.Message)
                 return;
 
             if (update.Message.Type != MessageType.Text)
+                return;
+
+            if (update.Message == null)
+                return;
+
+            if (string.IsNullOrWhiteSpace(update.Message.Text))
                 return;
 
             if (update.Message.From.IsBot)
@@ -140,56 +178,77 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects
                 return;
 
             var rootUri = Configuration.GetSection("AppConfiguration")["RootUri"];
+            var config = await _configBO.GetAsync(update.Message.Chat.Id);
 
             foreach (var uri in uris)
             {
-                if (uri.StartsWith(rootUri))
-                    continue;
-
-                if (UriExistsInDatabase(uri, update.Message.Chat.Id))
+                try
                 {
-                    await _messageBO.SendLinkAlreadyExistsMessageAsync(update.Message.Chat.Id, uri, uris.Length, update.Message.MessageId);
-                }
-                else
-                {
-                    var uriIsValid = await UriIsValidAsync(uri);
+                    if (uri.AbsoluteUri.StartsWith(rootUri))
+                        continue;
 
-                    if (uriIsValid.IsValid)
+                    if (await UriExistsInDatabase(uri, update.Message.Chat.Id))
                     {
-                        try
-                        {
-                            var link = new Link
-                            {
-                                ChatId = update.Message.Chat.Id,
-                                CreateDate = DateTime.Now,
-                                LinkId = Guid.NewGuid(),
-                                Message = update.Message.Text,
-                                Uri = uri,
-                                UserId = update.Message.From.Id
-                            };
-
-                            if (!string.IsNullOrEmpty(uriIsValid.UriTitle))
-                                link.Title = uriIsValid.UriTitle.Length > 300 ? uriIsValid.UriTitle.Substring(0, 300) : uriIsValid.UriTitle;
-
-                            if (!string.IsNullOrEmpty(update.Message.From.Username))
-                                link.Username = update.Message.From.Username;
-
-                            Context.Link.Add(link);
-                            await Context.SaveChangesAsync();
-
-                            await _messageBO.SendLinkSavedMessageAsync(update.Message.Chat.Id, uri, uris.Length, update.Message.MessageId);
-                        }
-                        catch (Exception exception)
-                        {
-                            Logger.LogError(exception.Message);
-
-                            throw;
-                        }
+                        if (config.EnableLinkAlreadyExistsMessage)
+                            await _messageBO.SendLinkAlreadyExistsMessageAsync(update.Message.Chat.Id, uri.AbsoluteUri, uris.Length, update.Message.MessageId);
                     }
                     else
                     {
-                        await _messageBO.SendInvalidLinkMessageAsync(update.Message.Chat.Id, uri, uris.Length, update.Message.MessageId);
+                        var uriData = await _crawlerBO.GetUriDataAsync(uri);
+
+                        if (uriData.IsValid)
+                        {
+                            try
+                            {
+                                var link = new Link {
+                                    LinkId = Guid.NewGuid(),
+                                    ChatId = update.Message.Chat.Id,
+                                    CreateDate = update.Message.Date,
+                                    Message = update.Message.Text,
+                                    Uri = uriData.Uri.AbsoluteUri,
+                                    UserId = update.Message.From.Id
+                                };
+
+                                if (uriData.HasTitle)
+                                    link.Title = uriData.Title.Length > 300 ? uriData.Title.Substring(0, 300) : uriData.Title;
+
+                                if (uriData.HasDescription)
+                                    link.Description = uriData.Description;
+
+                                if (uriData.HasKeywords)
+                                    link.Keywords = uriData.Keywords;
+
+                                if (uriData.HasTumbnailUri)
+                                    link.ThumbnailUri = uriData.ThumbnailUri.AbsoluteUri.Length <= 2048 ? uriData.ThumbnailUri.AbsoluteUri : null;
+
+                                if (!string.IsNullOrEmpty(update.Message.From.Username))
+                                    link.Username = update.Message.From.Username;
+
+                                Context.Link.Add(link);
+                                await Context.SaveChangesAsync();
+
+                                if (config.EnableSavedMessage)
+                                    await _messageBO.SendLinkSavedMessageAsync(update.Message.Chat.Id, uri.AbsoluteUri, uris.Length, update.Message.MessageId);
+                            }
+                            catch (Exception exception)
+                            {
+                                Logger.LogError(exception.Message);
+
+                                throw;
+                            }
+                        }
+                        else
+                        {
+                            if (config.EnableInvalidLinkMessage)
+                                await _messageBO.SendInvalidLinkMessageAsync(update.Message.Chat.Id, uri.AbsoluteUri, uris.Length, update.Message.MessageId);
+                        }
                     }
+                }
+                catch (Exception exception)
+                {
+                    Logger.LogError(exception.Message);
+
+                    throw;
                 }
             }
         }
@@ -198,14 +257,14 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects
 
         #region Private
 
-        private bool UriExistsInDatabase(string uri, long chatId)
+        private async Task<bool> UriExistsInDatabase(Uri uri, long chatId)
         {
             try
             {
-                return (from c in Context.Link
-                        where c.ChatId == chatId
-                            && c.Uri == uri
-                        select c.LinkId).Count() > 0;
+                return await (from c in Context.Link
+                              where c.ChatId == chatId
+                                  && c.Uri == uri.AbsoluteUri
+                              select c.LinkId).AnyAsync();
             }
             catch (Exception exception)
             {
@@ -215,21 +274,21 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects
             }
         }
 
-        private string[] GetUris(Update update)
+        private Uri[] GetUris(Update update)
         {
             if (update.Message.Entities == null || update.Message.EntityValues == null)
                 return null;
 
-            var result = new List<string>();
+            var result = new List<Uri>();
             var values = update.Message.EntityValues.ToArray();
 
-            for (int i = 0; i < values.Length; i++)
+            for (var i = 0; i < values.Length; i++)
             {
                 if (update.Message.Entities[i].Type == MessageEntityType.Url)
                 {
                     if ((Uri.TryCreate(values[i], UriKind.Absolute, out Uri uri) || Uri.TryCreate("http://" + values[i], UriKind.Absolute, out uri)) && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
                     {
-                        result.Add(uri.AbsoluteUri);
+                        result.Add(uri);
                     }
                 }
             }
@@ -237,102 +296,46 @@ namespace PodProgramar.LnkCapture.Data.BusinessObjects
             return result.ToArray();
         }
 
-        private async Task<UriValidResult> UriIsValidAsync(string uri)
+        public void UpdateAsync()
         {
-            var result = new UriValidResult { IsValid = false, UriTitle = null };
-
-            try
             {
-                using (var wc = new WebClient())
+                try
                 {
-                    wc.Headers.Add("User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36");
-                    string htmlContent = await DownloadStringAwareOfEncodingAsync(wc, new Uri(uri));
+                    var result = Context.Link.Where(p => !string.IsNullOrEmpty(p.Title) && !string.IsNullOrEmpty(p.Description) && !string.IsNullOrEmpty(p.Keywords) && !string.IsNullOrEmpty(p.ThumbnailUri)).ToList();
 
-                    var document = new HtmlDocument();
-                    document.LoadHtml(htmlContent);
-                    result.IsValid = true;
-
-                    try
+                    foreach (var link in result)
                     {
-                        var title = document.DocumentNode.Descendants("title").FirstOrDefault();
+                        try
+                        {
+                            var uriData = _crawlerBO.GetUriDataAsync(new Uri(link.Uri)).Result;
 
-                        if (title != null)
-                            result.UriTitle = WebUtility.HtmlDecode(title.InnerText).Trim();
-                    }
-                    catch (Exception)
-                    {
-                        result.UriTitle = null;
-                    }
+                            if (uriData.HasTitle)
+                                link.Title = uriData.Title.Length > 300 ? uriData.Title.Substring(0, 300) : uriData.Title;
 
-                    return result;
+                            if (uriData.HasDescription)
+                                link.Description = uriData.Description;
+
+                            if (uriData.HasKeywords)
+                                link.Keywords = uriData.Keywords;
+
+                            if (uriData.HasTumbnailUri)
+                                link.ThumbnailUri = uriData.ThumbnailUri.AbsoluteUri.Length <= 2048 ? uriData.ThumbnailUri.AbsoluteUri : null;
+
+                            Context.Link.Update(link);
+                            Context.SaveChanges();
+                        }
+                        catch (Exception exception)
+                        {
+                            Logger.LogError(exception.Message);
+                        }
+                    }
                 }
-            }
-            catch (Exception)
-            {
-                result.UriTitle = null;
+                catch (Exception exception)
+                {
+                    Logger.LogError(exception.Message);
 
-                return result;
-            }
-        }
-
-        private async Task<string> DownloadStringAwareOfEncodingAsync(WebClient webClient, Uri uri)
-        {
-            try
-            {
-                webClient.Headers.Add("User-Agent: Other");
-
-                var rawData = await webClient.DownloadDataTaskAsync(uri);
-                var encoding = GetEncodingFrom(webClient.ResponseHeaders, Encoding.UTF8);
-
-                return encoding.GetString(rawData);
-            }
-            catch (Exception exception)
-            {
-                Logger.LogError(exception.Message);
-
-                throw;
-            }
-        }
-
-        private Encoding GetEncodingFrom(NameValueCollection responseHeaders, Encoding defaultEncoding = null)
-        {
-            try
-            {
-                if (responseHeaders == null)
-                    throw new ArgumentNullException("responseHeaders");
-
-                var contentType = responseHeaders["Content-Type"];
-
-                if (contentType == null)
-                    return defaultEncoding;
-
-                var contentTypeParts = contentType.Split(';');
-
-                if (contentTypeParts.Length <= 1)
-                    return defaultEncoding;
-
-                var charsetPart = contentTypeParts.Skip(1).FirstOrDefault(p => p.TrimStart().StartsWith("charset", StringComparison.InvariantCultureIgnoreCase));
-
-                if (charsetPart == null)
-                    return defaultEncoding;
-
-                var charsetPartParts = charsetPart.Split('=');
-
-                if (charsetPartParts.Length != 2)
-                    return defaultEncoding;
-
-                var charsetName = charsetPartParts[1].Trim();
-
-                if (charsetName == "")
-                    return defaultEncoding;
-
-                return Encoding.GetEncoding(charsetName);
-            }
-            catch (Exception exception)
-            {
-                Logger.LogError(exception.Message);
-
-                return defaultEncoding ?? Encoding.UTF8;
+                    throw;
+                }
             }
         }
 
